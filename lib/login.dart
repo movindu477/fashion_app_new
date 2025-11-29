@@ -140,14 +140,14 @@ class _LoginPageState extends State<LoginPage> {
         final hasUser = auth.currentUser != null;
 
         if (hasUser) {
-          print('✅ Login successful');
+          print('✅ Login successful - redirecting to homepage');
 
           // Clear form fields
           _emailController.clear();
           _passwordController.clear();
 
+          // Navigate directly to homepage immediately
           if (mounted) {
-            // Navigate directly to homepage
             _navigateToHome();
           }
         } else {
@@ -160,8 +160,8 @@ class _LoginPageState extends State<LoginPage> {
         _emailController.clear();
         _passwordController.clear();
 
+        // Navigate directly to homepage immediately
         if (mounted) {
-          // Navigate directly to homepage
           _navigateToHome();
         }
       }
@@ -193,7 +193,8 @@ class _LoginPageState extends State<LoginPage> {
         try {
           final auth = FirebaseAuth.instance;
           if (auth.currentUser != null) {
-            print('✅ Login actually succeeded despite error');
+            print(
+                '✅ Login actually succeeded despite error - redirecting to homepage');
             // Clear form fields
             _emailController.clear();
             _passwordController.clear();
@@ -277,11 +278,29 @@ class _LoginPageState extends State<LoginPage> {
   void _navigateToHome() {
     if (!mounted) return;
 
-    // Navigate to homepage and remove all previous routes
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const HomePage()),
-      (route) => false, // Remove all previous routes
-    );
+    try {
+      // Navigate to homepage and remove all previous routes
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomePage()),
+        (route) => false, // Remove all previous routes
+      );
+      print('✅ Navigation to HomePage completed');
+    } catch (e) {
+      print('❌ Navigation error: $e');
+      // Retry navigation if it fails
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          try {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const HomePage()),
+              (route) => false,
+            );
+          } catch (retryError) {
+            print('❌ Retry navigation error: $retryError');
+          }
+        }
+      });
+    }
   }
 
   void _showErrorMessage(String message) {
