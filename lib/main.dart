@@ -48,12 +48,17 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late VideoPlayerController _videoController;
+  late AnimationController _loadingAnimationController;
   bool _isVideoInitialized = false;
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
+    _loadingAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
     _initializeApp();
   }
 
@@ -70,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
         _isVideoInitialized = true;
       });
 
-      Timer(const Duration(seconds: 3), _navigateToLogin);
+      Timer(const Duration(seconds: 20), _navigateToLogin);
     } catch (e) {
       print('❌ Error initializing splash screen: $e');
 
@@ -80,7 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
         });
       }
 
-      Timer(const Duration(seconds: 3), _navigateToLogin);
+      Timer(const Duration(seconds: 20), _navigateToLogin);
     }
   }
 
@@ -95,6 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _videoController.dispose();
+    _loadingAnimationController.dispose();
     super.dispose();
   }
 
@@ -132,22 +138,71 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 40),
-                Container(
-                  width: 200,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Colors.blueAccent,
-                        Colors.purpleAccent,
-                        Colors.redAccent,
-                        Colors.orangeAccent,
-                      ],
+                // Animated Loading Bar
+                AnimatedBuilder(
+                  animation: _loadingAnimationController,
+                  builder: (context, child) {
+                    return Container(
+                      width: 200,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2),
+                        color: Colors.white.withOpacity(0.2),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Animated progress bar
+                          FractionallySizedBox(
+                            widthFactor: _loadingAnimationController.value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(2),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.blueAccent,
+                                    Colors.purpleAccent,
+                                    Colors.pinkAccent,
+                                    Colors.orangeAccent,
+                                  ],
+                                  stops: [
+                                    0.0,
+                                    0.33,
+                                    0.66,
+                                    1.0,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                // Rotating loading indicator
+                RotationTransition(
+                  turns: _loadingAnimationController,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
                 const Text(
                   'Loading Fashion App...',
                   style: TextStyle(

@@ -89,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
       // Check internet connection
       try {
         final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 15));
         if (result.isEmpty || result[0].rawAddress.isEmpty) {
           throw Exception('No internet connection');
         }
@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
       // Don't store UserCredential to avoid type cast issues
       await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password)
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
 
       // Wait a moment for Firebase to fully process the user data
       await Future.delayed(const Duration(milliseconds: 1000));
@@ -146,9 +146,18 @@ class _LoginPageState extends State<LoginPage> {
           _emailController.clear();
           _passwordController.clear();
 
-          // Navigate directly to homepage immediately
+          // Show success message
           if (mounted) {
-            _navigateToHome();
+            _showSuccessMessage();
+          }
+
+          // Navigate directly to homepage automatically after a brief delay
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 800), () {
+              if (mounted) {
+                _navigateToHome();
+              }
+            });
           }
         } else {
           throw Exception('Login succeeded but no user found');
@@ -160,9 +169,18 @@ class _LoginPageState extends State<LoginPage> {
         _emailController.clear();
         _passwordController.clear();
 
-        // Navigate directly to homepage immediately
+        // Show success message
         if (mounted) {
-          _navigateToHome();
+          _showSuccessMessage();
+        }
+
+        // Navigate directly to homepage automatically after a brief delay
+        if (mounted) {
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              _navigateToHome();
+            }
+          });
         }
       }
     } on FirebaseAuthException catch (e, stackTrace) {
@@ -198,8 +216,19 @@ class _LoginPageState extends State<LoginPage> {
             // Clear form fields
             _emailController.clear();
             _passwordController.clear();
+
+            // Show success message
             if (mounted) {
-              _navigateToHome();
+              _showSuccessMessage();
+            }
+
+            // Navigate directly to homepage automatically after a brief delay
+            if (mounted) {
+              Future.delayed(const Duration(milliseconds: 800), () {
+                if (mounted) {
+                  _navigateToHome();
+                }
+              });
             }
             return; // Exit early - login was successful
           }
@@ -300,6 +329,31 @@ class _LoginPageState extends State<LoginPage> {
           }
         }
       });
+    }
+  }
+
+  void _showSuccessMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'Login Successful! Redirecting...',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
     }
   }
 
