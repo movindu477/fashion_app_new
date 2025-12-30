@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -12,6 +14,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ImagePicker _picker = ImagePicker();
   File? fabricImage;
+  bool _isUploading = false;
+  List<List<int>> dominantColors = [];
+  bool analysisCompleted = false;
 
   Future<void> captureFabricImage() async {
     final XFile? image = await _picker.pickImage(
@@ -26,12 +31,118 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> uploadFabricImage() async {
+    if (fabricImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No image to upload")),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+      analysisCompleted = false;
+      dominantColors = [];
+    });
+
+    try {
+      print('Starting upload to: http://192.168.8.100:3000/upload-fabric');
+      print('Image path: ${fabricImage!.path}');
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://192.168.8.100:3000/upload-fabric'),
+      );
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'fabric',
+          fabricImage!.path,
+        ),
+      );
+
+      print('Sending request...');
+      var response = await request.send();
+      print('Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print('Response body: $responseBody');
+
+        try {
+          final decoded = jsonDecode(responseBody);
+
+          // Extract ML analysis results
+          if (decoded['analysis'] != null &&
+              decoded['analysis']['dominant_colors'] != null) {
+            final colors = decoded['analysis']['dominant_colors'];
+
+            setState(() {
+              dominantColors = List<List<int>>.from(
+                colors.map((c) => List<int>.from(c)),
+              );
+              analysisCompleted = true;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Fabric analyzed successfully!"),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Image uploaded but analysis unavailable"),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } catch (e) {
+          print('Error parsing response: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Image uploaded successfully"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        print(
+            'Upload failed. Status: ${response.statusCode}, Body: $errorBody');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Upload failed: Status ${response.statusCode}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('Error during upload: $e');
+      print('Stack trace: $stackTrace');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
+  }
+
   void analyzeFabricImage() {
     if (fabricImage == null) {
       return;
     }
 
-    // NEXT STEP: send to backend
+    uploadFabricImage();
   }
 
   @override
@@ -173,12 +284,54 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: analyzeFabricImage,
-                      child: const Text("Analyze Fabric"),
+                      onPressed: _isUploading ? null : analyzeFabricImage,
+                      child: _isUploading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text("Analyze Fabric"),
                     ),
                   ),
                 ],
               ),
+
+              // -------- ML ANALYSIS RESULTS --------
+              if (analysisCompleted && dominantColors.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  "Detected Fabric Colors",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: dominantColors.map((color) {
+                    return Container(
+                      width: 50,
+                      height: 50,
+                      margin: const EdgeInsets.only(right: 10),
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(
+                          color[0],
+                          color[1],
+                          color[2],
+                          1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
 
             const SizedBox(height: 24),
