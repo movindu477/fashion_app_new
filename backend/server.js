@@ -67,7 +67,13 @@ app.post('/upload-fabric', upload.single('fabric'), async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.get('/', (req, res) => {
+  res.send('Fashion App Backend is Running!');
+});
+
+app.listen(3000, '0.0.0.0', () => {
   console.log('Server running on port 3000');
+  console.log('Accessible at http://localhost:3000 locally');
+  console.log('Accessible at http://<your-ip>:3000 from other devices');
 });
 

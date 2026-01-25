@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'dart:io';
+import 'dart:ui'; // Added for ImageFilter
+
 import 'dart:async';
 import 'reg.dart';
 import 'homepage.dart';
@@ -15,346 +15,109 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late VideoPlayerController _videoController;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
-  bool _isVideoInitialized = false;
   bool _obscurePassword = true;
+
+  int _colorIndex = 0;
+  Timer? _colorTimer;
+
+  final List<Color> _blobColors1 = [
+    Colors.purple.withOpacity(0.5),
+    Colors.teal.withOpacity(0.5),
+    Colors.indigo.withOpacity(0.5),
+  ];
+
+  final List<Color> _blobColors2 = [
+    Colors.blueAccent.withOpacity(0.5),
+    Colors.purpleAccent.withOpacity(0.5),
+    Colors.cyan.withOpacity(0.5),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeVideo();
     _checkFirebaseInitialization();
+    _startColorCycle();
+  }
+
+  void _startColorCycle() {
+    _colorTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        setState(() {
+          _colorIndex = (_colorIndex + 1) % _blobColors1.length;
+        });
+      }
+    });
   }
 
   Future<void> _checkFirebaseInitialization() async {
     try {
-      // Ensure Firebase is initialized
       if (Firebase.apps.isEmpty) {
-        print('⚠️ Firebase not initialized, attempting to initialize...');
-        // This should not happen if main.dart is correct, but just in case
-      } else {
-        print('✅ Firebase is initialized');
+        await Firebase.initializeApp();
       }
     } catch (e) {
       print('❌ Firebase check error: $e');
     }
   }
 
-  Future<void> _initializeVideo() async {
-    try {
-      _videoController = VideoPlayerController.asset('assets/images/login.mp4');
-      await _videoController.initialize();
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-        _videoController.play();
-        _videoController.setLooping(true);
-      }
-    } catch (e) {
-      print('Error initializing video: $e');
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = false;
-        });
-      }
-    }
-  }
-
   @override
   void dispose() {
-    _videoController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _colorTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _onLoginPressed() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
     try {
-      print('🔐 Attempting to login with: $email');
+      final auth = FirebaseAuth.instance;
+      print('Attempting login for: ${_emailController.text.trim()}');
 
-      // Check internet connection
-      try {
-        final result = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 15));
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          throw Exception('No internet connection');
-        }
-      } on SocketException catch (_) {
-        _showErrorMessage(
-            "No internet connection. Please check your connection.");
-        setState(() => _loading = false);
-        return;
-      } on TimeoutException catch (_) {
-        _showErrorMessage(
-            "Connection timeout. Please check your internet connection.");
-        setState(() => _loading = false);
-        return;
-      }
+      await auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-      // Ensure Firebase is initialized
-      if (Firebase.apps.isEmpty) {
-        _showErrorMessage("Firebase not initialized. Please restart the app.");
-        setState(() => _loading = false);
-        return;
-      }
+      print('Login call completed normally');
 
-      // Verify Firebase Auth is available
-      try {
-        final auth = FirebaseAuth.instance;
-        print('✅ Firebase Auth instance verified: ${auth.app.name}');
-      } catch (e) {
-        print('❌ Firebase Auth check failed: $e');
-        _showErrorMessage(
-            "Firebase authentication is not available. Please restart the app.");
-        setState(() => _loading = false);
-        return;
-      }
-
-      // Attempt login with Firebase
-      // Don't store UserCredential to avoid type cast issues
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password)
-          .timeout(const Duration(seconds: 60));
-
-      // Wait a moment for Firebase to fully process the user data
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      // Check if user exists without accessing properties that might cause type cast errors
-      try {
-        // Simply check if currentUser exists - don't access any properties yet
-        final auth = FirebaseAuth.instance;
-        final hasUser = auth.currentUser != null;
-
-        if (hasUser) {
-          print('✅ Login successful - redirecting to homepage');
-
-          // Clear form fields
-          _emailController.clear();
-          _passwordController.clear();
-
-          // Show success message
-          if (mounted) {
-            _showSuccessMessage();
-          }
-
-          // Navigate directly to homepage automatically after a brief delay
-          if (mounted) {
-            Future.delayed(const Duration(milliseconds: 800), () {
-              if (mounted) {
-                _navigateToHome();
-              }
-            });
-          }
-        } else {
-          throw Exception('Login succeeded but no user found');
-        }
-      } catch (userCheckError) {
-        print('⚠️ Error checking user: $userCheckError');
-        // Even if we can't verify user, the sign-in succeeded
-        // Clear form fields
-        _emailController.clear();
-        _passwordController.clear();
-
-        // Show success message
-        if (mounted) {
-          _showSuccessMessage();
-        }
-
-        // Navigate directly to homepage automatically after a brief delay
-        if (mounted) {
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) {
-              _navigateToHome();
-            }
-          });
-        }
-      }
-    } on FirebaseAuthException catch (e, stackTrace) {
-      print('❌ Firebase Auth Error: ${e.code} - ${e.message}');
-      print('❌ Stack trace: $stackTrace');
-      _handleFirebaseError(e);
-    } on TimeoutException catch (e, stackTrace) {
-      print('❌ Timeout Error: $e');
-      print('❌ Stack trace: $stackTrace');
-      _showErrorMessage(
-          "Request timed out. Please check your internet connection and try again.");
-    } catch (e, stackTrace) {
-      print('❌ Unexpected error: $e');
-      print('❌ Error type: ${e.runtimeType}');
-      print('❌ Stack trace: $stackTrace');
-
-      // Handle specific Pigeon type cast error
-      String errorString = e.toString();
-      if (errorString.contains('PigeonUserDetails') ||
-          errorString.contains('not a subtype') ||
-          errorString.contains('type cast')) {
-        // This is a Firebase internal error - login might have actually succeeded
-        print(
-            '⚠️ Pigeon type cast error detected - checking if login succeeded');
-
-        // Wait a bit and check if user is actually logged in
-        await Future.delayed(const Duration(milliseconds: 1000));
-        try {
-          final auth = FirebaseAuth.instance;
-          if (auth.currentUser != null) {
-            print(
-                '✅ Login actually succeeded despite error - redirecting to homepage');
-            // Clear form fields
-            _emailController.clear();
-            _passwordController.clear();
-
-            // Show success message
-            if (mounted) {
-              _showSuccessMessage();
-            }
-
-            // Navigate directly to homepage automatically after a brief delay
-            if (mounted) {
-              Future.delayed(const Duration(milliseconds: 800), () {
-                if (mounted) {
-                  _navigateToHome();
-                }
-              });
-            }
-            return; // Exit early - login was successful
-          }
-        } catch (checkError) {
-          print('❌ Error checking login status: $checkError');
-        }
-
-        _showErrorMessage(
-            "Login completed but encountered an internal error. Please try logging in again or restart the app.");
-      } else {
-        // Provide more specific error message for other errors
-        String errorMsg = "An unexpected error occurred.";
-        if (errorString.contains('PlatformException')) {
-          errorMsg =
-              "Platform error. Please ensure Firebase is properly configured.";
-        } else if (errorString.contains('network')) {
-          errorMsg = "Network error. Please check your internet connection.";
-        } else if (errorString.contains('permission')) {
-          errorMsg = "Permission denied. Please check Firebase permissions.";
-        } else {
-          errorMsg =
-              "Error: ${errorString.length > 100 ? errorString.substring(0, 100) + '...' : errorString}";
-        }
-        _showErrorMessage(errorMsg);
-      }
-    } finally {
       if (mounted) {
-        setState(() => _loading = false);
+        _navigateToHome();
       }
-    }
-  }
+    } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Exception: ${e.code} - ${e.message}');
+      _showErrorMessage(e.message ?? "Login failed");
+    } catch (e) {
+      print('Unexpected error during login: $e');
 
-  void _handleFirebaseError(FirebaseAuthException e) {
-    String errorMessage;
-    switch (e.code) {
-      case 'user-not-found':
-        errorMessage =
-            "No account found with this email. Please register first.";
-        break;
-      case 'wrong-password':
-        errorMessage = "Incorrect password. Please try again.";
-        break;
-      case 'invalid-email':
-        errorMessage = "The email address is not valid.";
-        break;
-      case 'invalid-credential':
-        errorMessage =
-            "The email or password is incorrect. Please check your credentials and try again.";
-        break;
-      case 'user-disabled':
-        errorMessage =
-            "This account has been disabled. Please contact support.";
-        break;
-      case 'too-many-requests':
-        errorMessage = "Too many failed attempts. Please try again later.";
-        break;
-      case 'network-request-failed':
-        errorMessage = "Network error. Please check your internet connection.";
-        break;
-      case 'operation-not-allowed':
-        errorMessage =
-            "Email/password accounts are not enabled. Please contact support.";
-        break;
-      case 'invalid-verification-code':
-        errorMessage = "Invalid verification code.";
-        break;
-      case 'invalid-verification-id':
-        errorMessage = "Invalid verification ID.";
-        break;
-      default:
-        errorMessage = e.message ?? "Login failed. Please try again.";
+      // CRITICAL FIX: Check if login actually succeeded despite the error
+      // This handles known issues where platform channels throw TypeErrors on success
+      if (FirebaseAuth.instance.currentUser != null) {
+        print(
+            'Recovered from error - User is actually logged in: ${FirebaseAuth.instance.currentUser?.uid}');
+        if (mounted) {
+          _navigateToHome();
+        }
+        return;
+      }
+
+      _showErrorMessage("Error: ${e.toString()}");
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    _showErrorMessage(errorMessage);
   }
 
   void _navigateToHome() {
-    if (!mounted) return;
-
-    try {
-      // Navigate to homepage and remove all previous routes
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const HomePage()),
-        (route) => false, // Remove all previous routes
-      );
-      print('✅ Navigation to HomePage completed');
-    } catch (e) {
-      print('❌ Navigation error: $e');
-      // Retry navigation if it fails
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          try {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const HomePage()),
-              (route) => false,
-            );
-          } catch (retryError) {
-            print('❌ Retry navigation error: $retryError');
-          }
-        }
-      });
-    }
-  }
-
-  void _showSuccessMessage() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text(
-                'Login Successful! Redirecting...',
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const HomePage()),
+      (route) => false,
+    );
   }
 
   void _showErrorMessage(String message) {
@@ -362,302 +125,226 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () =>
-                ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-          ),
         ),
       );
     }
   }
 
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black, // Background color remains as it is
       body: Stack(
-        fit: StackFit.expand,
         children: [
-          if (_isVideoInitialized)
-            FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController.value.size.width,
-                height: _videoController.value.size.height,
-                child: VideoPlayer(_videoController),
-              ),
-            )
-          else
-            Container(color: Colors.black),
-          Center(
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  padding: const EdgeInsets.all(25),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: Colors.grey.withOpacity(0.3), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
+          // Background Elements (Animated)
+          Positioned(
+            top: -100,
+            left: -100,
+            child: AnimatedContainer(
+              duration: const Duration(seconds: 4),
+              curve: Curves.easeInOut,
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _blobColors1[_colorIndex],
+                boxShadow: [
+                  BoxShadow(
+                    color: _blobColors1[_colorIndex],
+                    blurRadius: 100,
+                    spreadRadius: 50,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/logo.png'),
-                            fit: BoxFit.cover,
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            right: -50,
+            child: AnimatedContainer(
+              duration: const Duration(seconds: 4),
+              curve: Curves.easeInOut,
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _blobColors2[_colorIndex],
+                boxShadow: [
+                  BoxShadow(
+                    color: _blobColors2[_colorIndex],
+                    blurRadius: 100,
+                    spreadRadius: 50,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  // Adjusted padding to shift content slightly left
+                  padding: const EdgeInsets.only(
+                      left: 20, right: 30, top: 40, bottom: 40),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header Section
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Hello,",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 36, // Reduced from 42
+                                  fontWeight: FontWeight.w300,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              Text(
+                                "User",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 36, // Reduced from 42
+                                  fontWeight: FontWeight.bold,
+                                  height: 0.9,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              Text(
+                                "Sign in to your account",
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 14, // Reduced size
+                                ),
+                              ),
+                            ],
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Welcome Back",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      const Text(
-                        "Login to continue",
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                      const SizedBox(height: 25),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          final emailRegex =
-                              RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-                          if (!emailRegex.hasMatch(value.trim())) {
-                            return 'Please enter a valid email address';
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: "Email",
-                          labelStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon:
-                              const Icon(Icons.email, color: Colors.grey),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.grey),
+                          const SizedBox(height: 48),
+
+                          // Inputs
+                          _buildTextField(
+                            controller: _emailController,
+                            label: 'Email',
+                            icon: Icons.email_outlined,
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.black, width: 2),
+                          const SizedBox(height: 15),
+                          _buildTextField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            icon: Icons.lock_outline,
+                            isPassword: true,
                           ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.red, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _onLoginPressed(),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: "Password",
-                          labelStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon:
-                              const Icon(Icons.lock, color: Colors.grey),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.grey,
-                            ),
-                            onPressed: _togglePasswordVisibility,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.grey),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.black, width: 2),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                const BorderSide(color: Colors.red, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => _showErrorMessage(
-                              "Forgot password feature coming soon!"),
-                          child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      InkWell(
-                        onTap: _loading ? null : _onLoginPressed,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 55,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _loading
-                                  ? [Colors.grey, Colors.grey]
-                                  : [Colors.black, Colors.black87],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: _loading
-                                ? []
-                                : [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                          ),
-                          child: _loading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "LOGIN",
+
+                          const SizedBox(height: 30),
+
+                          // Login Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _loading ? null : _onLoginPressed,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _loading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.black),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'LOG IN',
                                       style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.2,
                                       ),
                                     ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward,
-                                        color: Colors.white, size: 18),
-                                  ],
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text("OR",
-                                style: TextStyle(
-                                    color: Colors.grey[600], fontSize: 12)),
-                          ),
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Don't have an account? ",
-                              style: TextStyle(color: Colors.grey)),
-                          GestureDetector(
-                            onTap: _loading
-                                ? null
-                                : () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (_) =>
-                                                const RegisterPage()));
-                                  },
-                            child: Text(
-                              "REGISTER",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: _loading ? Colors.grey : Colors.black,
-                                decoration: TextDecoration.underline,
-                              ),
                             ),
                           ),
+
+                          const SizedBox(height: 20),
+
+                          // Register Link
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Need an account? ",
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 13),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation,
+                                              secondaryAnimation) =>
+                                          const RegisterPage(),
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        const begin = Offset(1.0, 0.0);
+                                        const end = Offset.zero;
+                                        const curve = Curves.easeOut;
+
+                                        var tween = Tween(
+                                                begin: begin, end: end)
+                                            .chain(CurveTween(curve: curve));
+
+                                        return SlideTransition(
+                                          position: animation.drive(tween),
+                                          child: child,
+                                        );
+                                      },
+                                      transitionDuration:
+                                          const Duration(milliseconds: 500),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "REGISTER",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -665,6 +352,62 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword && _obscurePassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white70, fontSize: 14),
+        hintStyle: TextStyle(color: Colors.white30),
+        prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+              )
+            : null,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: Colors.white24, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.white, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Required';
+        return null;
+      },
     );
   }
 }

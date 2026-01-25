@@ -30,5 +30,5 @@ flutter:
   assets:
     - assets/images/login.mp4
     - assets/images/reg.mp4
-    - assets/images/splash.mp4
+    - assets/images/home1.mp4
     - assets/images/logo.png

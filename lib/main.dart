@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'login.dart';
@@ -47,61 +46,90 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late VideoPlayerController _videoController;
-  late AnimationController _loadingAnimationController;
-  bool _isVideoInitialized = false;
-  bool _hasError = false;
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late AnimationController _zoomController;
+  late Animation<double> _zoomAnimation;
+
+  double _dragValue = 0.0;
+  final double _maxWidth = 200.0; // Slider width
+  bool _completed = false;
 
   @override
   void initState() {
     super.initState();
-    _loadingAnimationController = AnimationController(
+
+    // Initial Fade In
+    _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat();
-    _initializeApp();
-  }
+    );
 
-  Future<void> _initializeApp() async {
-    try {
-      _videoController =
-          VideoPlayerController.asset('assets/images/splash.mp4');
-      await _videoController.initialize();
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
 
-      _videoController.play();
-      _videoController.setLooping(true);
+    _controller.forward();
 
-      setState(() {
-        _isVideoInitialized = true;
-      });
+    // Zoom Animation for transition
+    _zoomController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
 
-      Timer(const Duration(seconds: 20), _navigateToLogin);
-    } catch (e) {
-      print('❌ Error initializing splash screen: $e');
-
-      if (mounted) {
-        setState(() {
-          _hasError = true;
-        });
-      }
-
-      Timer(const Duration(seconds: 20), _navigateToLogin);
-    }
-  }
-
-  void _navigateToLogin() {
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
-    }
+    _zoomAnimation = Tween<double>(begin: 1.0, end: 15.0).animate(
+      // Zoom heavily
+      CurvedAnimation(parent: _zoomController, curve: Curves.easeInOutExpo),
+    );
   }
 
   @override
   void dispose() {
-    _videoController.dispose();
-    _loadingAnimationController.dispose();
+    _controller.dispose();
+    _zoomController.dispose();
     super.dispose();
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (_completed) return;
+    setState(() {
+      _dragValue += details.delta.dx;
+      _dragValue = _dragValue.clamp(0.0, _maxWidth - 50); // 50 is button size
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (_completed) return;
+    if (_dragValue > _maxWidth - 60) {
+      _completeSplash();
+    } else {
+      // Reset
+      setState(() {
+        _dragValue = 0.0;
+      });
+    }
+  }
+
+  void _completeSplash() async {
+    setState(() {
+      _completed = true;
+      _dragValue = _maxWidth - 50;
+    });
+
+    // Start Zoom
+    await _zoomController.forward();
+
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginPage(),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    }
   }
 
   @override
@@ -109,109 +137,108 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        fit: StackFit.expand,
         children: [
-          if (_isVideoInitialized && !_hasError)
-            FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController.value.size.width,
-                height: _videoController.value.size.height,
-                child: VideoPlayer(_videoController),
-              ),
-            )
-          else
-            Container(color: Colors.black),
+          // CENTER CONTENT (Logo)
           Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/logo.png'),
-                      fit: BoxFit.cover,
+            child: AnimatedBuilder(
+              animation: _zoomAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _zoomAnimation.value,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24, width: 1),
+                          ),
+                          child: const Icon(Icons.auto_awesome,
+                              size: 60, color: Colors.white),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'TEXORA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 42,
+                            fontWeight:
+                                FontWeight.w100, // Thin, modern font weight
+                            letterSpacing: 8.0,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'AI FASHION DESIGN',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                            letterSpacing: 4.0,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                // Animated Loading Bar
-                AnimatedBuilder(
-                  animation: _loadingAnimationController,
-                  builder: (context, child) {
-                    return Container(
-                      width: 200,
-                      height: 4,
+                );
+              },
+            ),
+          ),
+
+          // BOTTOM SLIDER (Slide to Start)
+          Positioned(
+            bottom: 80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _completed
+                  ? const SizedBox()
+                  : Container(
+                      width: _maxWidth,
+                      height: 50,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(2),
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white24),
                       ),
                       child: Stack(
                         children: [
-                          // Animated progress bar
-                          FractionallySizedBox(
-                            widthFactor: _loadingAnimationController.value,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(2),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.blueAccent,
-                                    Colors.purpleAccent,
-                                    Colors.pinkAccent,
-                                    Colors.orangeAccent,
-                                  ],
-                                  stops: [
-                                    0.0,
-                                    0.33,
-                                    0.66,
-                                    1.0,
-                                  ],
+                          // Text
+                          const Center(
+                            child: Text(
+                              "Slide to Start",
+                              style: TextStyle(
+                                color: Colors.white30,
+                                letterSpacing: 2.0,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+
+                          // Draggable Button
+                          Positioned(
+                            left: _dragValue,
+                            child: GestureDetector(
+                              onHorizontalDragUpdate: _onDragUpdate,
+                              onHorizontalDragEnd: _onDragEnd,
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
                                 ),
+                                child: const Icon(Icons.arrow_forward,
+                                    color: Colors.black),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
-                // Rotating loading indicator
-                RotationTransition(
-                  turns: _loadingAnimationController,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
-                      ),
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.favorite,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  'Loading Fashion App...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
