@@ -86,67 +86,45 @@ class _HomePageState extends State<HomePage> {
                   )
                 ],
               ),
-              child: Stack(
-                children: [
-                  // Active Indicator (Orange Circle)
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      double containerWidth = constraints.maxWidth;
-                      return AnimatedAlign(
-                        alignment: Alignment(
-                            _getAlignmentX(_currentIndex, containerWidth), 0),
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.fastOutSlowIn,
-                        child: Container(
-                          width: 55,
-                          height: 55,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFF5200), // Vibrant Orange
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Icons Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                          child: Center(
-                              child: _NavBarItem(
-                                  icon: Icons.home_rounded,
-                                  isActive: _currentIndex == 0,
-                                  onTap: () => _onTabTapped(0)))),
-                      Expanded(
-                          child: Center(
-                              child: _NavBarItem(
-                                  icon: Icons.grid_view_rounded,
-                                  isActive: _currentIndex == 1,
-                                  onTap: () => _onTabTapped(1)))),
-                      Expanded(
-                          child: Center(
-                              child: _NavBarItem(
-                                  icon: Icons.add_rounded,
-                                  isActive: _currentIndex == 2,
-                                  isLarge: true,
-                                  onTap: () => _onTabTapped(2)))),
-                      Expanded(
-                          child: Center(
-                              child: _NavBarItem(
-                                  icon: Icons.notifications_none_rounded,
-                                  isActive: _currentIndex == 3,
-                                  onTap: () => _onTabTapped(3)))),
-                      Expanded(
-                          child: Center(
-                              child: _NavBarItem(
-                                  icon: Icons.person_outline_rounded,
-                                  isActive: _currentIndex == 4,
-                                  onTap: () => _onTabTapped(4)))),
+                      _NavBarItem(
+                        icon: Icons.home_rounded,
+                        label: "Home",
+                        isActive: _currentIndex == 0,
+                        onTap: () => _onTabTapped(0),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.grid_view_rounded,
+                        label: "Explore",
+                        isActive: _currentIndex == 1,
+                        onTap: () => _onTabTapped(1),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.add_rounded,
+                        label: "Create",
+                        isActive: _currentIndex == 2,
+                        onTap: () => _onTabTapped(2),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.notifications_none_rounded,
+                        label: "Activity",
+                        isActive: _currentIndex == 3,
+                        onTap: () => _onTabTapped(3),
+                      ),
+                      _NavBarItem(
+                        icon: Icons.person_outline_rounded,
+                        label: "Profile",
+                        isActive: _currentIndex == 4,
+                        onTap: () => _onTabTapped(4),
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -154,51 +132,58 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  // Precise Dynamic Alignment
-  // Accounts for the button width (55) to ensure centers match perfectly
-  double _getAlignmentX(int index, double containerWidth) {
-    double range = 2.0; // From -1 to 1
-    double step = range / 5; // 0.4 per item
-    // Center positions in -1..1 scale: -0.8, -0.4, 0.0, 0.4, 0.8
-    // Formula: -1 + (step/2) + (index * step)
-    double targetBase = -1.0 + (step / 2) + (index * step);
-
-    // Correction factor for indicator size
-    // Align x=1 puts right edge at right edge. We want center at center.
-    // X_corrected = X_base * (ParentWidth / (ParentWidth - ChildWidth))
-    double buttonWidth = 55.0;
-    if (containerWidth <= buttonWidth) return 0.0; // Safety
-
-    return targetBase * (containerWidth / (containerWidth - buttonWidth));
-  }
 }
 
 class _NavBarItem extends StatelessWidget {
   final IconData icon;
+  final String label;
   final bool isActive;
-  final bool isLarge;
   final VoidCallback onTap;
 
   const _NavBarItem({
     required this.icon,
+    required this.label,
     required this.isActive,
     required this.onTap,
-    this.isLarge = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        height: 70,
-        width: 60,
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : Colors.white38,
-          size: isLarge ? 32 : 26,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.fastOutSlowIn,
+        padding:
+            EdgeInsets.symmetric(horizontal: isActive ? 16 : 8, vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFFF5200) : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isActive ? Colors.white : Colors.white54,
+              size: 26,
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -254,6 +239,13 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _fetchUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      // 1. FAST UPDATE: Set user immediately to show displayName/email
+      if (mounted) {
+        setState(() {
+          _user = user;
+        });
+      }
+
       try {
         final doc = await FirebaseFirestore.instance
             .collection('users')
@@ -472,6 +464,33 @@ class _HomeViewState extends State<HomeView> {
                               color: Colors.white, size: 20),
                         ],
                       ),
+
+                      // Analyze Button (Visible when image is captured)
+                      if (fabricImage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: ElevatedButton.icon(
+                            onPressed: _isUploading ? null : uploadFabricImage,
+                            icon: _isUploading
+                                ? const SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.analytics_outlined,
+                                    size: 16),
+                            label: Text(
+                                _isUploading ? "Analyzing..." : "Analyze Now"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
 
@@ -486,7 +505,9 @@ class _HomeViewState extends State<HomeView> {
                             borderRadius: BorderRadius.circular(20),
                             child: Image.file(
                               fabricImage!,
-                              width: 150,
+                              width:
+                                  120, // Reduced width to make room for button
+                              height: 120,
                               fit: BoxFit.cover,
                             ),
                           )

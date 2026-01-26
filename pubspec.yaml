@@ -17,6 +17,7 @@ dependencies:
   video_player: ^2.8.2
   image_picker: ^1.0.7
   http: ^1.2.0
+  firebase_storage: ^11.6.5
 
 
 dev_dependencies:
@@ -32,3 +33,4 @@ flutter:
     - assets/images/reg.mp4
     - assets/images/home1.mp4
     - assets/images/logo.png
+    - assets/images/splash.mp4

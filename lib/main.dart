@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'login.dart';
+import 'welcome_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late AnimationController _zoomController;
   late Animation<double> _zoomAnimation;
+  late Animation<double> _fadeOutAnimation;
 
   double _dragValue = 0.0;
   final double _maxWidth = 200.0; // Slider width
@@ -74,12 +75,19 @@ class _SplashScreenState extends State<SplashScreen>
     // Zoom Animation for transition
     _zoomController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 2000), // Slower zoom
     );
 
     _zoomAnimation = Tween<double>(begin: 1.0, end: 15.0).animate(
-      // Zoom heavily
       CurvedAnimation(parent: _zoomController, curve: Curves.easeInOutExpo),
+    );
+
+    // Fade Out Animation (Starts halfway through zoom)
+    _fadeOutAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _zoomController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+      ),
     );
   }
 
@@ -122,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const LoginPage(),
+          pageBuilder: (_, __, ___) => const WelcomePage(),
           transitionsBuilder: (_, animation, __, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -141,46 +149,51 @@ class _SplashScreenState extends State<SplashScreen>
           // CENTER CONTENT (Logo)
           Center(
             child: AnimatedBuilder(
-              animation: _zoomAnimation,
+              animation:
+                  _zoomController, // Listen to controller for multiple animations
               builder: (context, child) {
-                return Transform.scale(
-                  scale: _zoomAnimation.value,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 1),
+                return FadeTransition(
+                  opacity: _fadeOutAnimation,
+                  child: Transform.scale(
+                    scale: _zoomAnimation.value,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation, // Initial fade in
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: Colors.white24, width: 1),
+                            ),
+                            child: const Icon(Icons.auto_awesome,
+                                size: 60, color: Colors.white),
                           ),
-                          child: const Icon(Icons.auto_awesome,
-                              size: 60, color: Colors.white),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'TEXORA',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 42,
-                            fontWeight:
-                                FontWeight.w100, // Thin, modern font weight
-                            letterSpacing: 8.0,
+                          const SizedBox(height: 24),
+                          const Text(
+                            'TEXORA',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight:
+                                  FontWeight.w100, // Thin, modern font weight
+                              letterSpacing: 8.0,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'AI FASHION DESIGN',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 12,
-                            letterSpacing: 4.0,
+                          const SizedBox(height: 8),
+                          Text(
+                            'AI FASHION DESIGN',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 12,
+                              letterSpacing: 4.0,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
