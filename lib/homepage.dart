@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:ui'; // For ImageFilter
 import 'package:flutter/material.dart';
@@ -8,6 +7,8 @@ import 'profile_page.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data'; // Added for Uint8List
+import 'dart:io'; // Kept for Platform.isAndroid check
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -207,7 +208,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final ImagePicker _picker = ImagePicker();
-  File? fabricImage;
+  Uint8List? fabricImageBytes; // Changed from File
   bool _isUploading = false;
   List<List<int>> dominantColors = [];
   bool analysisCompleted = false;
@@ -270,15 +271,16 @@ class _HomeViewState extends State<HomeView> {
     );
 
     if (image != null) {
+      final bytes = await image.readAsBytes(); // Read image as bytes
       setState(() {
-        fabricImage = File(image.path);
+        fabricImageBytes = bytes; // Store bytes
       });
       // Auto upload/analyze could happen here if desired, but user kept separate
     }
   }
 
   Future<void> uploadFabricImage() async {
-    if (fabricImage == null) return;
+    if (fabricImageBytes == null) return; // Check for bytes
     setState(() {
       _isUploading = true;
       analysisCompleted = false;
@@ -290,8 +292,13 @@ class _HomeViewState extends State<HomeView> {
           Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
       var request =
           http.MultipartRequest('POST', Uri.parse('$baseUrl/upload-fabric'));
-      request.files
-          .add(await http.MultipartFile.fromPath('fabric', fabricImage!.path));
+
+      // Use fromBytes instead of fromPath
+      request.files.add(http.MultipartFile.fromBytes(
+        'fabric',
+        fabricImageBytes!,
+        filename: 'fabric.jpg', // Provide a filename
+      ));
 
       var response = await request.send();
 
@@ -466,7 +473,7 @@ class _HomeViewState extends State<HomeView> {
                       ),
 
                       // Analyze Button (Visible when image is captured)
-                      if (fabricImage != null)
+                      if (fabricImageBytes != null) // Check for bytes
                         Padding(
                           padding: const EdgeInsets.only(top: 10),
                           child: ElevatedButton.icon(
@@ -500,11 +507,12 @@ class _HomeViewState extends State<HomeView> {
                     right: -20,
                     bottom: -20,
                     top: 20,
-                    child: fabricImage != null
+                    child: fabricImageBytes != null // Check for bytes
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: Image.file(
-                              fabricImage!,
+                            child: Image.memory(
+                              // Use Image.memory
+                              fabricImageBytes!,
                               width:
                                   120, // Reduced width to make room for button
                               height: 120,

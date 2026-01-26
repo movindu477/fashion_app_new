@@ -1,9 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io';
 
 import 'login.dart';
 import 'edit_profile_page.dart';
@@ -19,7 +19,7 @@ class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
   User? _user;
   Map<String, dynamic>? _userData;
-  File? _localImageFile;
+  Uint8List? _localImageBytes;
   bool _isUploading = false;
 
   @override
@@ -96,22 +96,54 @@ class _ProfilePageState extends State<ProfilePage>
 
   // Let's replace the imports and class definition first.
 
-  Future<void> _pickAndUploadImage() async {
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.black87),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.black87),
+              title: const Text('Take a Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: source);
 
     if (pickedFile != null && _user != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _localImageFile = File(pickedFile.path);
+        _localImageBytes = bytes;
         _isUploading = true;
       });
 
-      File file = File(pickedFile.path);
       try {
         // 1. Upload to Firebase Storage
         String filePath = 'user_profiles/${_user!.uid}_profile.jpg';
         Reference ref = FirebaseStorage.instance.ref().child(filePath);
-        UploadTask uploadTask = ref.putFile(file);
+        UploadTask uploadTask = ref.putData(bytes);
 
         // Wait for upload to complete
         TaskSnapshot snapshot = await uploadTask;
@@ -131,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage>
         // 5. Update Local State (Clear local file to use network url now)
         if (mounted) {
           setState(() {
-            _localImageFile = null; // Switch back to network image
+            _localImageBytes = null; // Switch back to network image
           });
           await _fetchUserData();
         }
@@ -139,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage>
         print("Error uploading image: $e");
         if (mounted) {
           setState(() {
-            _localImageFile = null; // Revert on failure
+            _localImageBytes = null; // Revert on failure
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Failed to upload image: $e")),
@@ -179,8 +211,8 @@ class _ProfilePageState extends State<ProfilePage>
     final photoUrl = _userData?['photoUrl'] ?? _user?.photoURL;
 
     ImageProvider imageProvider;
-    if (_localImageFile != null) {
-      imageProvider = FileImage(_localImageFile!);
+    if (_localImageBytes != null) {
+      imageProvider = MemoryImage(_localImageBytes!);
     } else if (photoUrl != null) {
       imageProvider = NetworkImage(photoUrl);
     } else {
@@ -244,7 +276,7 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     ),
                     GestureDetector(
-                      onTap: _pickAndUploadImage,
+                      onTap: _showImageSourceDialog,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
