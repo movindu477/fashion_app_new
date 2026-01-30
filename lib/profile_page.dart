@@ -9,7 +9,8 @@ import 'login.dart';
 import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final VoidCallback? onBack;
+  const ProfilePage({super.key, this.onBack});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -76,25 +77,6 @@ class _ProfilePageState extends State<ProfilePage>
       ),
     );
   }
-
-  // ... (Existing _pickAndUploadImage and _logout methods remain the same but must be included or preserved.
-  // Since I am replacing a chunk, I must include them or ensure start/end guidelines preserve them.
-  // The 'ReplacementContent' must replace the targeted chunk.
-  // I will target the imports down to the Menu List to insert the new logic.)
-
-  // WAIT, I need to be careful not to delete methods.
-  // I will use `replace_file_content` strategically.
-
-  // STRATEGY:
-  // 1. Add 'edit_profile_page.dart' import.
-  // 2. Add Mixin and wantKeepAlive.
-  // 3. Add _navigateToEditProfile method.
-  // 4. Update the "Edit Profile" tile to call _navigateToEditProfile.
-
-  // I will do a massive replacement of the top class definition and build method to be safe,
-  // but I need to keep the image upload logic intact.
-
-  // Let's replace the imports and class definition first.
 
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
@@ -205,11 +187,7 @@ class _ProfilePageState extends State<ProfilePage>
     final email = _userData?['email'] ?? _user?.email ?? "janeper01@gmail.com";
 
     // Determine Photo Provider
-    // 1. Local Preview
-    // 2. Network URL from Firestore/Auth
-    // 3. Asset Fallback
     final photoUrl = _userData?['photoUrl'] ?? _user?.photoURL;
-
     ImageProvider imageProvider;
     if (_localImageBytes != null) {
       imageProvider = MemoryImage(_localImageBytes!);
@@ -240,7 +218,24 @@ class _ProfilePageState extends State<ProfilePage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildHeaderIconBtn(Icons.arrow_back_ios_new, () {}),
+                    GestureDetector(
+                      // Custom Back Button
+                      onTap: () {
+                        if (widget.onBack != null) {
+                          widget.onBack!();
+                        }
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_new,
+                            color: Colors.white, size: 20),
+                      ),
+                    ),
                     const Text(
                       "Profile",
                       style: TextStyle(
@@ -249,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage>
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    _buildHeaderIconBtn(Icons.shopping_bag_outlined, () {}),
+                    _buildHeaderIconBtn(Icons.settings_outlined, () {}),
                   ],
                 ),
 
@@ -303,7 +298,7 @@ class _ProfilePageState extends State<ProfilePage>
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22, // Size adjusted to look like image
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),

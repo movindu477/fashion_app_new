@@ -88,7 +88,7 @@ class _WelcomePageState extends State<WelcomePage> {
                 children: [
                   // Text Content
                   const Text(
-                    "Discover Your Next\nAdventure",
+                    "Welcome to Texora\nAI Fashion Design",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -98,7 +98,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Plan trips, explore destinations, and book\nunforgettable experiences.",
+                    "Revolutionize your wardrobe with AI-powered fabric \nanalysis and personalized style recommendations.",
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 14,

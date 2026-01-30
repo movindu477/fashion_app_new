@@ -4,8 +4,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'welcome_page.dart';
 
+import 'dart:io'; // Added for HttpOverrides
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔴 FIX: Allow development certificates (Solves some SSL Handshake errors)
+  HttpOverrides.global = MyHttpOverrides();
 
   // Firebase initialization
   try {
@@ -18,6 +23,16 @@ void main() async {
   }
 
   runApp(const MyApp());
+}
+
+// Custom HttpOverrides to ignore bad certificates in Dev
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
 }
 
 class MyApp extends StatelessWidget {

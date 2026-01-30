@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'reg.dart';
 import 'homepage.dart';
+import 'package:quickalert/quickalert.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -55,35 +56,92 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomePage()),
-          (route) => false,
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Welcome Back!',
+          text: 'Login Successful',
+          autoCloseDuration: const Duration(seconds: 2),
+          showConfirmBtn: false,
         );
-      }
-    } on FirebaseAuthException catch (e) {
-      _showErrorMessage(e.message ?? "Login failed");
-    } catch (e) {
-      if (FirebaseAuth.instance.currentUser != null) {
+
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomePage()),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const HomePage(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0); // Slide from right
+                const end = Offset.zero;
+                const curve = Curves.easeInOutQuart;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 800),
+            ),
             (route) => false,
           );
         }
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = "Login failed";
+      if (e.code == 'network-request-failed') {
+        msg = "No Internet Connection";
+      } else if (e.code == 'user-not-found') {
+        msg = "User not found";
+      } else if (e.code == 'wrong-password') {
+        msg = "Incorrect Password";
+      } else {
+        msg = e.message ?? "Login failed";
+      }
+      _showQuickAlertError(msg);
+    } catch (e) {
+      // Check if unexpected error is actually a success redirect happening too fast (rare race condition)
+      if (FirebaseAuth.instance.currentUser != null) {
+        Navigator.of(context).pushAndRemoveUntil(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const HomePage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOutQuart;
+
+              var tween =
+                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+              return SlideTransition(
+                position: animation.drive(tween),
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+          (route) => false,
+        );
         return;
       }
-      _showErrorMessage("Error: ${e.toString()}");
+      _showQuickAlertError("Error: ${e.toString()}");
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-      ),
+  void _showQuickAlertError(String message) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'Login Failed',
+      text: message,
+      confirmBtnColor: const Color(0xFFFF5200),
     );
   }
 

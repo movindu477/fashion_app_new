@@ -36,26 +36,26 @@ def extract_dominant_colors(image_path, k=3):
 def analyze_fabric():
     try:
         data = request.json
-        print("Received data from Node.js:", data)
+        print("➡️ Data from Node:", data)
 
-        image_path = data.get('image_path') if data else None
+        image_path = data.get('image_path')
         if not image_path:
-            return jsonify({'status': 'error', 'error': 'Image path missing'}), 400
+            return jsonify({"status": "error", "message": "No image path"}), 400
 
         colors = extract_dominant_colors(image_path)
 
-        print("Dominant colors:", colors)
+        print("✅ Colors extracted:", colors)
 
         return jsonify({
-            'status': 'success',
-            'dominant_colors': colors
+            "status": "success",
+            "dominant_colors": colors
         })
 
     except Exception as e:
-        print("Error in analyze_fabric:", str(e))
+        print("❌ Python error:", str(e))
         return jsonify({
-            'status': 'error',
-            'error': str(e)
+            "status": "error",
+            "message": str(e)
         }), 500
 
 if __name__ == '__main__':

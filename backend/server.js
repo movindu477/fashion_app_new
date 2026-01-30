@@ -17,52 +17,45 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// 📡 PING ROUTE TO TEST CONNECTIVITY
+app.get("/ping", (req, res) => {
+  console.log("📡 Ping received from device");
+  res.json({ status: "ok" });
+});
+
 app.post('/upload-fabric', upload.single('fabric'), async (req, res) => {
+  console.log("🔥 /upload-fabric endpoint HIT");
+
   if (!req.file) {
-    return res.status(400).json({ message: 'No file received' });
+    console.error("❌ No file received");
+    return res.status(400).json({ status: "error", message: "No file received" });
   }
 
-  console.log('Image received:', req.file.filename);
-  console.log('Image path sent to Python:', req.file.path);
+  console.log("✅ Image received:", req.file.filename);
+  console.log("➡️ Sending to Python:", req.file.path);
 
   try {
-    // Call Python ML service
-    console.log('Sending to Python ML service...');
     const pythonResponse = await axios.post(
       'http://127.0.0.1:5000/analyze-fabric',
-      {
-        image_path: req.file.path
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      { image_path: req.file.path },
+      { timeout: 8000 } // ⬅ VERY IMPORTANT
     );
 
-    console.log('Python ML analysis complete');
-    console.log('Python response:', pythonResponse.data);
+    console.log("✅ Python responded");
 
-    // Return ML results to Flutter
-    res.status(200).json({
-      message: 'Fabric analyzed',
+    return res.status(200).json({
+      status: "success",
       analysis: pythonResponse.data,
     });
-  } catch (error) {
-    console.error("Python service error:", error.message);
-    if (error.response) {
-      console.error("Python error response:", error.response.data);
-      console.error("Python status code:", error.response.status);
-    }
 
-    // If Python service fails, still return success but without analysis
-    res.status(200).json({
-      message: 'Image uploaded but analysis unavailable',
-      file: req.file.filename,
-      analysis: {
-        status: 'error',
-        error: 'ML analysis service unavailable',
-      },
+  } catch (error) {
+    console.error("❌ Python error:", error.message);
+
+    // 🔴 ALWAYS RESPOND
+    return res.status(200).json({
+      status: "partial",
+      message: "Image uploaded, ML failed",
+      error: error.message,
     });
   }
 });
@@ -71,9 +64,10 @@ app.get('/', (req, res) => {
   res.send('Fashion App Backend is Running!');
 });
 
-app.listen(3000, '0.0.0.0', () => {
-  console.log('Server running on port 3000');
-  console.log('Accessible at http://localhost:3000 locally');
-  console.log('Accessible at http://<your-ip>:3000 from other devices');
+// ✅ LISTEN ON ALL INTERFACES
+app.listen(3000, "0.0.0.0", () => {
+  console.log("Server running on port 3000");
+  console.log("Listening on all network interfaces (0.0.0.0)");
+  console.log("Accessible at http://localhost:3000 locally");
+  console.log("Accessible at http://<your-ip>:3000 from mobile devices");
 });
-

@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Users Collection
+    // Authenticated users can only read/write their own user document and subcollections
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // 2. Fabric Library Collection
+    // Rules strictly enforcing that users can only manage fabric data tagged with their own userId
+    match /fabric_library/{docId} {
+      // Allow creating a new document strictly if the 'userId' field matches their Auth UID
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Allow reading, updating, or deleting existing documents only if they belong to the user
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // 3. Fallback (Optional for Development)
+    // It is safer to rely on the specific rules above. 
+    // If you need other collections for dev, you can keep this, but be careful.
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

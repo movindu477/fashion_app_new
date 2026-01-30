@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'login.dart';
+import 'package:quickalert/quickalert.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -68,96 +69,50 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       if (mounted) {
-        _showSuccessDialog();
+        // Show Success Alert
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Welcome!',
+          text: 'Account Created Successfully',
+          confirmBtnText: 'Login Now',
+          confirmBtnColor: const Color(0xFFFF5200),
+          barrierDismissible: false,
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop(); // Close alert
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          },
+        );
       }
     } on FirebaseAuthException catch (e) {
-      _showErrorMessage(e.message ?? "Registration failed");
+      String msg = "Registration failed";
+      if (e.code == 'email-already-in-use') {
+        msg = "Email already in use";
+      } else if (e.code == 'weak-password') {
+        msg = "Password is too weak";
+      } else if (e.code == 'network-request-failed') {
+        msg = "No Internet Connection";
+      } else {
+        msg = e.message ?? "Registration failed";
+      }
+      _showQuickAlertError(msg);
     } catch (e) {
-      _showErrorMessage("An unexpected error occurred");
+      _showQuickAlertError("An unexpected error occurred: $e");
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
+  void _showQuickAlertError(String message) {
+    QuickAlert.show(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_circle,
-                    color: Colors.green, size: 40),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Account Created!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your account has been successfully created. Please log in to continue.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const LoginPage()),
-                      (route) => false,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5200),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Login Now',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-      ),
+      type: QuickAlertType.error,
+      title: 'Registration Failed',
+      text: message,
+      confirmBtnColor: const Color(0xFFFF5200),
     );
   }
 
