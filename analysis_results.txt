@@ -1,0 +1,70 @@
+Analyzing fashion_app_new...                                    
+
+   info - Parameter 'key' could be a super parameter - lib\fabric_library_page.dart:9:9 - use_super_parameters
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:70:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:141:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:170:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:173:51 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\fabric_library_page.dart:435:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:444:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\fabric_library_page.dart:461:52 - deprecated_member_use
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round() & 0xff - lib\fabric_library_page.dart:480:51 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round() & 0xff - lib\fabric_library_page.dart:480:65 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round() & 0xff - lib\fabric_library_page.dart:480:81 - deprecated_member_use
+warning - Unused import: 'dart:io' - lib\homepage.dart:10:8 - unused_import
+   info - The import of 'package:camera/camera.dart' is unnecessary because all of the used elements are also provided by the import of 'package:image_picker/image_picker.dart' - lib\homepage.dart:14:8 - unnecessary_import
+warning - Unused import: 'package:path_provider/path_provider.dart' - lib\homepage.dart:15:8 - unused_import
+   info - Parameter 'key' could be a super parameter - lib\homepage.dart:18:9 - use_super_parameters
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:87:41 - deprecated_member_use
+   info - Parameter 'key' could be a super parameter - lib\homepage.dart:200:9 - use_super_parameters
+   info - Don't invoke 'print' in production code - lib\homepage.dart:265:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\homepage.dart:325:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\homepage.dart:348:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\homepage.dart:371:11 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\homepage.dart:378:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\homepage.dart:380:9 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\homepage.dart:403:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\homepage.dart:420:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\homepage.dart:428:7 - avoid_print
+   info - Statements in an if should be enclosed in a block - lib\homepage.dart:450:7 - curly_braces_in_flow_control_structures
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\homepage.dart:456:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:488:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:552:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:653:49 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\homepage.dart:770:32 - prefer_const_constructors
+warning - The value of the local variable 'isDark' isn't used - lib\homepage.dart:801:25 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:824:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:844:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:867:61 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:888:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:934:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:960:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\homepage.dart:983:45 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\homepage.dart:989:26 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\homepage.dart:992:31 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\homepage.dart:1000:23 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\homepage.dart:1002:35 - prefer_const_literals_to_create_immutables
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\login.dart:4:8 - unnecessary_import
+   info - Don't invoke 'print' in production code - lib\login.dart:35:7 - avoid_print
+   info - Don't use 'BuildContext's across async gaps - lib\login.dart:108:22 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\login.dart:245:19 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\login.dart:328:33 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\login.dart:369:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\login.dart:371:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\login.dart:373:7 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\login.dart:384:35 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\main.dart:20:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\main.dart:22:5 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\main.dart:205:51 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\profile_page.dart:153:9 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\profile_page.dart:232:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\profile_page.dart:359:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\profile_page.dart:405:35 - deprecated_member_use
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\reg.dart:5:8 - unnecessary_import
+   info - Don't invoke 'print' in production code - lib\reg.dart:36:7 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\reg.dart:143:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\reg.dart:271:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\welcome_page.dart:71:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\welcome_page.dart:72:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\welcome_page.dart:103:43 - deprecated_member_use
+

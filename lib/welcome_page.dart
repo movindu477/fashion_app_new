@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:page_transition/page_transition.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'login.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -10,33 +12,49 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-  late VideoPlayerController _videoController;
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    // Using splash.mp4 as requested
-    _videoController = VideoPlayerController.asset('assets/images/splash.mp4')
-      ..initialize().then((_) {
-        _videoController.setLooping(true);
-        _videoController.play();
-        setState(() {});
-      });
-  }
+  final List<Map<String, String>> _onboardingData = [
+    {
+      'image': 'assets/images/main4.jpg',
+      'title': 'Style\nNever\nStops',
+      'description':
+          'Elevate your unique fashion identity with AI-driven fabric analysis and trend insights.',
+    },
+    {
+      'image': 'assets/images/main5.jpg',
+      'title': 'AI\nPowered\nDesign',
+      'description':
+          'Revolutionize your wardrobe using state-of-the-art neural networks to analyze texture and color.',
+    },
+    {
+      'image': 'assets/images/main6.jpg',
+      'title': 'Your\nDigital\nWardrobe',
+      'description':
+          'Build and manage your personalized fashion collection entirely on your device with Texora.',
+    },
+  ];
 
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
+  void _onNext() {
+    if (_currentPage < _onboardingData.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _navigateToLogin();
+    }
   }
 
   void _navigateToLogin() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoginPage(),
-        transitionsBuilder: (_, a, __, c) =>
-            FadeTransition(opacity: a, child: c),
-        transitionDuration: const Duration(milliseconds: 500),
+    Navigator.pushReplacement(
+      context,
+      PageTransition(
+        type: PageTransitionType.fade,
+        child: const LoginPage(),
+        duration: const Duration(milliseconds: 1000),
+        curve: Curves.easeInOut,
       ),
     );
   }
@@ -44,99 +62,157 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Base background
+      backgroundColor: Colors.black,
       body: Stack(
-        fit: StackFit.expand,
         children: [
-          // 1. Background Video (Full Screen)
-          _videoController.value.isInitialized
-              ? SizedBox.expand(
-                  child: FittedBox(
+          // 1. PAGE VIEW FOR BACKGROUNDS
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentPage = index),
+            itemCount: _onboardingData.length,
+            itemBuilder: (context, index) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    _onboardingData[index]['image']!,
                     fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _videoController.value.size.width,
-                      height: _videoController.value.size.height,
-                      child: VideoPlayer(_videoController),
+                  ),
+                  // Gradient Overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.1),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.8),
+                        ],
+                        stops: const [0.0, 0.4, 1.0],
+                      ),
                     ),
                   ),
-                )
-              : Container(color: Colors.black),
-
-          // 2. Black Gradient Overlay
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.9),
+                  // Content Area
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32.0, vertical: 40.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              height: 60,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _onboardingData[index]['title']!,
+                            key: ValueKey('title_$index'),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 70,
+                              fontWeight: FontWeight.w900,
+                              height: 0.95,
+                              letterSpacing: -2.0,
+                            ),
+                          )
+                              .animate(key: ValueKey('title_anim_$index'))
+                              .fadeIn(duration: 600.ms)
+                              .slideX(begin: 0.2, end: 0),
+                          const SizedBox(height: 20),
+                          // Description
+                          Text(
+                            _onboardingData[index]['description']!,
+                            key: ValueKey('desc_$index'),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          )
+                              .animate(key: ValueKey('desc_anim_$index'))
+                              .fadeIn(delay: 200.ms, duration: 600.ms)
+                              .slideY(begin: 0.2, end: 0),
+                          const SizedBox(height: 120), // Space for button
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-                stops: const [0.4, 0.7, 1.0],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+              );
+            },
           ),
 
-          // 3. Content
-          SafeArea(
+          // 2. BOTTOM NAVIGATION (BUTTON & INDICATORS)
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Text Content
-                  const Text(
-                    "Welcome to Texora\nAI Fashion Design",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    "Revolutionize your wardrobe with AI-powered fabric \nanalysis and personalized style recommendations.",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Bottom Row: Button Right
+                  // Indicators
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Get Started Button (Orange)
-                      ElevatedButton(
-                        onPressed: _navigateToLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF5200), // Orange
-                          foregroundColor:
-                              Colors.white, // White text on bright button
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 0,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: List.generate(
+                      _onboardingData.length,
+                      (index) => Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        width: _currentPage == index ? 24 : 8,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _currentPage == index
+                              ? const Color(0xFFCCFF00)
+                              : Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        child: const Text(
-                          "Get Started",
-                          style: TextStyle(
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .slideX(begin: -0.2, end: 0),
+                  ),
+                  const SizedBox(height: 30),
+                  // Primary Action Button (AS SEEN IN UI)
+                  GestureDetector(
+                    onTap: _onNext,
+                    child: Container(
+                      width: double.infinity,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCCFF00),
+                        borderRadius: BorderRadius.circular(40),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFCCFF00).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          _currentPage == 0
+                              ? "Explore Style"
+                              : _currentPage == 1
+                                  ? "Discover AI"
+                                  : "Get Started",
+                          style: GoogleFonts.poppins(
+                            color: Colors.black,
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                    ),
+                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5, end: 0),
                 ],
               ),
             ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -94,53 +96,84 @@ class _EditProfilePageState extends State<EditProfilePage> {
     // Given the phrasing "come from left side...", a page transition is best.
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0F0F0F),
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Edit Profile",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(
+          "Edit Profile",
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+            letterSpacing: -0.5,
+          ),
+        ),
+        backgroundColor: const Color(0xFF0F0F0F),
         elevation: 0,
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        physics: const BouncingScrollPhysics(),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                "Personal Information",
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 24),
               _buildTextField(
-                  "Full Name", _nameController, Icons.person_outline),
+                  "Full Name", _nameController, Icons.person_outline_rounded),
               const SizedBox(height: 20),
-              _buildTextField(
-                  "Phone Number", _phoneController, Icons.phone_outlined),
+              _buildTextField("Phone Number", _phoneController,
+                  Icons.phone_android_rounded),
               const SizedBox(height: 20),
-              _buildTextField("Bio", _bioController, Icons.info_outline,
-                  maxLines: 3),
-              const SizedBox(height: 40),
+              _buildTextField("Bio", _bioController, Icons.textsms_outlined,
+                  maxLines: 4),
+              const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 58,
                 child: ElevatedButton(
                   onPressed: _isUpdating ? null : _updateProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5200),
-                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFFCCFF00),
+                    foregroundColor: Colors.black,
+                    elevation: 8,
+                    shadowColor: const Color(0xFFCCFF00).withOpacity(0.3),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(20)),
                   ),
                   child: _isUpdating
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Save Changes",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                              color: Colors.black, strokeWidth: 2.5))
+                      : Text(
+                          "Save Changes",
+                          style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              letterSpacing: -0.2),
+                        ),
                 ),
-              ),
+              ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+              const SizedBox(height: 40),
             ],
-          ),
+          ).animate().fadeIn(duration: 600.ms),
         ),
       ),
     );
@@ -149,24 +182,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildTextField(
       String label, TextEditingController controller, IconData icon,
       {int maxLines = 1}) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey),
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Colors.white38,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFF5200), width: 1.5),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon,
+                color: const Color(0xFFCCFF00).withOpacity(0.7), size: 22),
+            filled: true,
+            fillColor: const Color(0xFF1A1A1A),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide:
+                  const BorderSide(color: Color(0xFFCCFF00), width: 1.5),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          ),
+          validator: (val) => val == null || val.isEmpty ? "Required" : null,
         ),
-      ),
-      validator: (val) => val == null || val.isEmpty ? "Required" : null,
-    );
+      ],
+    ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.05, end: 0);
   }
 }

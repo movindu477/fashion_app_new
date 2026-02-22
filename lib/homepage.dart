@@ -1,20 +1,18 @@
-import 'dart:convert';
-import 'dart:ui'; // For ImageFilter
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'profile_page.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:quickalert/quickalert.dart'; // Added QuickAlert
-import 'dart:typed_data'; // Added for Uint8List
-import 'dart:async'; // Added for TimeoutException
+import 'package:quickalert/quickalert.dart';
+import 'dart:typed_data';
+import 'dart:async';
 
-import 'api_config.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'fabric_library_page.dart';
+import 'services/color_analysis_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -34,19 +32,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    if (_currentIndex == index) return;
+    setState(() => _currentIndex = index);
     _pageController.animateToPage(
       index,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
   }
 
   @override
   void dispose() {
-    // pageController is disposed
     _pageController.dispose();
     super.dispose();
   }
@@ -54,76 +50,75 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0F0F0F),
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          // 1. Main Page Content
+          // 1. Page content — jumpToPage for instant no-jank switching
           PageView(
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              const HomeView(), // 0: Home (Scan)
-              const FabricLibraryPage(), // 1: Library (History)
+              HomeView(onHistoryTap: () => _onTabTapped(1)),
+              const FabricLibraryPage(),
               const Center(
-                  child: Text(
-                      "Activity Page Coming Soon")), // 2: Activity (Placeholder)
+                  child:
+                      Text('Scan Page', style: TextStyle(color: Colors.white))),
               ProfilePage(
                 onBack: () => _onTabTapped(0),
-              ), // 3: Profile (with Back callback)
+              ),
             ],
           ),
 
           // 2. Floating Bottom Navigation Bar
           Positioned(
-            left: 20,
-            right: 20,
-            bottom: 30, // Elevated slightly more
+            bottom: 25,
+            left: 25,
+            right: 25,
             child: Container(
-              height: 80,
+              height: 70,
               decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(40),
+                color: const Color(0xFF1A1A1A).withOpacity(0.97),
+                borderRadius: BorderRadius.circular(35),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.4),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   )
                 ],
               ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _NavBarItem(
-                        icon: Icons.home_rounded,
-                        label: "Home",
-                        isActive: _currentIndex == 0,
-                        onTap: () => _onTabTapped(0),
-                      ),
-                      _NavBarItem(
-                        icon: Icons.history_edu_rounded,
-                        label: "Library",
-                        isActive: _currentIndex == 1,
-                        onTap: () => _onTabTapped(1),
-                      ),
-                      _NavBarItem(
-                        icon: Icons.notifications_none_rounded,
-                        label: "Activity",
-                        isActive: _currentIndex == 2,
-                        onTap: () => _onTabTapped(2),
-                      ),
-                      _NavBarItem(
-                        icon: Icons.person_outline_rounded,
-                        label: "Profile",
-                        isActive: _currentIndex == 3,
-                        onTap: () => _onTabTapped(3),
-                      ),
-                    ],
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavBarItem(
+                      icon: Icons.home_filled,
+                      label: 'Home',
+                      isActive: _currentIndex == 0,
+                      onTap: () => _onTabTapped(0),
+                    ),
+                    _NavBarItem(
+                      icon: Icons.folder_open_rounded,
+                      label: 'Library',
+                      isActive: _currentIndex == 1,
+                      onTap: () => _onTabTapped(1),
+                    ),
+                    _NavBarItem(
+                      icon: Icons.style_outlined,
+                      label: 'Scan',
+                      isActive: _currentIndex == 2,
+                      onTap: () => _onTabTapped(2),
+                    ),
+                    _NavBarItem(
+                      icon: Icons.person_3_outlined,
+                      label: 'Profile',
+                      isActive: _currentIndex == 3,
+                      onTap: () => _onTabTapped(3),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -157,7 +152,7 @@ class _NavBarItem extends StatelessWidget {
         padding:
             EdgeInsets.symmetric(horizontal: isActive ? 16 : 8, vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFF5200) : Colors.transparent,
+          color: isActive ? const Color(0xFFCCFF00) : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
@@ -165,7 +160,7 @@ class _NavBarItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? Colors.white : Colors.white54,
+              color: isActive ? Colors.black : Colors.white54,
               size: 26,
             ),
             if (isActive) ...[
@@ -174,7 +169,7 @@ class _NavBarItem extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -199,21 +194,21 @@ class _NavBarItem extends StatelessWidget {
 // =================================================================
 
 class HomeView extends StatefulWidget {
-  const HomeView({Key? key}) : super(key: key);
+  final VoidCallback? onHistoryTap;
+  const HomeView({Key? key, this.onHistoryTap}) : super(key: key);
 
   @override
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView>
-    with AutomaticKeepAliveClientMixin {
+class _HomeViewState extends State<HomeView> {
   final ImagePicker _picker = ImagePicker();
-  Uint8List? fabricImageBytes; // Changed from File
-  String? fabricImagePath; // Added for Firestore
-  bool _isUploading = false;
-  List<List<int>> dominantColors = [];
+  Uint8List? fabricImageBytes;
+  String? fabricImagePath;
+  bool _isAnalyzing = false;
+  List<Map<String, int>> dominantColors = [];
   bool analysisCompleted = false;
-  String? suggestedUse; // New: For analysis note
+  String? suggestedUse;
 
   // User Data & Video
   User? _user;
@@ -286,108 +281,68 @@ class _HomeViewState extends State<HomeView>
     }
   }
 
-  Future<void> saveFabricAnalysis({
-    required String imagePath,
-    required List<List<int>> colors,
-  }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  Future<void> analyzeFabricLocally() async {
+    if (fabricImagePath == null) return;
 
-    // Convert colors to Map structure for better Firestore querying
-    List<Map<String, int>> formattedColors = colors.map((c) {
-      if (c.length >= 3) {
-        return {
-          'r': c[0],
-          'g': c[1],
-          'b': c[2],
-        };
-      }
-      return {'r': 0, 'g': 0, 'b': 0}; // Fallback
-    }).toList();
-
-    await FirebaseFirestore.instance.collection('fabric_library').add({
-      'userId': user.uid,
-      'imagePath': imagePath,
-      'dominantColors': formattedColors,
-      'createdAt': Timestamp.now(),
-      'analysisType': 'color-extraction',
-    });
-  }
-
-  Future<void> uploadFabricImage() async {
-    if (fabricImageBytes == null) return;
     setState(() {
-      _isUploading = true;
+      _isAnalyzing = true;
       analysisCompleted = false;
       dominantColors = [];
     });
 
     try {
-      print("📤 Sending request to ${ApiConfig.baseUrl}/upload-fabric");
+      debugPrint("🚀 [ON-DEVICE] Starting color extraction...");
+      debugPrint("📸 Image Path: $fabricImagePath");
 
-      final uri = Uri.parse("${ApiConfig.baseUrl}/upload-fabric");
-      var request = http.MultipartRequest('POST', uri);
-      request.files.add(http.MultipartFile.fromBytes(
-        'fabric',
-        fabricImageBytes!,
-        filename: 'fabric.jpg',
-      ));
+      // Perform color extraction
+      final colors =
+          await ColorAnalysisService.getDominantColors(fabricImagePath!);
 
-      final streamedResponse =
-          await request.send().timeout(const Duration(seconds: 15));
+      if (colors.isNotEmpty) {
+        debugPrint(
+            "✅ [ON-DEVICE] Extraction successful: ${colors.length} colors found");
+        setState(() {
+          dominantColors = colors;
+          analysisCompleted = true;
 
-      final responseBody = await streamedResponse.stream.bytesToString();
+          // Calculate suggested use based on the first dominant color
+          final firstColor = colors[0];
+          final brightness = (firstColor['r']! * 299 +
+                  firstColor['g']! * 587 +
+                  firstColor['b']! * 114) /
+              1000;
+          suggestedUse = brightness > 128
+              ? "Casual / Summer Wear"
+              : "Formal / Evening Wear";
+        });
 
-      print("📥 Response status: ${streamedResponse.statusCode}");
-      print("📥 Response body: $responseBody");
-
-      final decoded = jsonDecode(responseBody);
-
-      if (decoded['status'] == 'success') {
-        print("✅ Analysis success");
-        if (decoded['analysis'] != null &&
-            decoded['analysis']['dominant_colors'] != null) {
-          final List<dynamic> colors = decoded['analysis']['dominant_colors'];
-          setState(() {
-            dominantColors = colors.map((c) {
-              return (c as List).map((val) => (val as num).toInt()).toList();
-            }).toList();
-            analysisCompleted = true;
-          });
-
+        if (mounted) {
           QuickAlert.show(
             context: context,
             type: QuickAlertType.success,
             title: 'Analysis Complete',
-            text: 'Fabric analyzed successfully!',
+            text: 'Fabric analyzed locally on your device!',
             onConfirmBtnTap: () {
-              Navigator.of(context).pop(); // Close the alert
-              // Smooth scroll to results after a short delay to ensure UI frame is ready
+              Navigator.of(context).pop();
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (_resultsKey.currentContext != null) {
                   Scrollable.ensureVisible(
                     _resultsKey.currentContext!,
                     duration: const Duration(milliseconds: 800),
                     curve: Curves.easeInOutQuart,
-                    alignment:
-                        0.1, // Align slightly below the very top (0.0 is top)
+                    alignment: 0.1,
                   );
                 }
               });
             },
           );
+        }
 
-          // Save to Firestore (Existing method)
-          _saveAnalysisToFirestore();
-
-          // Save to Firestore (New method requested by User)
-          if (fabricImagePath != null) {
-            await saveFabricAnalysis(
-              imagePath: fabricImagePath!,
-              colors: dominantColors,
-            );
-          }
-        } else {
+        // Save metadata to Firestore
+        await _saveAnalysisToFirestore();
+      } else {
+        debugPrint("⚠️ [ON-DEVICE] No colors detected");
+        if (mounted) {
           QuickAlert.show(
             context: context,
             type: QuickAlertType.warning,
@@ -395,79 +350,36 @@ class _HomeViewState extends State<HomeView>
             text: 'No colors found in analysis',
           );
         }
-      } else {
-        print("⚠️ Backend returned partial/error: ${decoded['message']}");
+      }
+    } catch (e) {
+      debugPrint("❌ [ON-DEVICE] Analysis error: $e");
+      if (mounted) {
         QuickAlert.show(
           context: context,
           type: QuickAlertType.error,
-          title: 'Analysis Failed',
-          text: decoded['message'] ?? "Unknown error",
+          title: 'Error',
+          text: "Local analysis failed: $e",
         );
       }
-    } on TimeoutException {
-      print("⏱️ TIMEOUT: No response from Node.js");
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Timeout',
-        text: "Server took too long to respond. Please check your connection.",
-      );
-    } catch (e) {
-      print("❌ Flutter exception: $e");
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Error',
-        text: "Unexpected error: $e",
-      );
     } finally {
-      if (mounted) setState(() => _isUploading = false);
+      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
-  // 🔹 NEW: Save to Firestore
-
-  bool _isSaving = false;
   bool _saveSuccess = false;
 
   Future<void> _saveAnalysisToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || fabricImageBytes == null || dominantColors.isEmpty)
-      return;
-
-    final firstColor = dominantColors[0];
-    final brightness =
-        (firstColor[0] * 299 + firstColor[1] * 587 + firstColor[2] * 114) /
-            1000;
-    final use =
-        brightness > 128 ? "Casual / Summer Wear" : "Formal / Evening Wear";
+    if (user == null || dominantColors.isEmpty) return;
 
     setState(() {
-      suggestedUse = use;
-      _isSaving = true;
       _saveSuccess = false;
     });
 
     try {
-      print("💾 Saving analysis to big data (Base64 Mode)...");
+      print("💾 Saving analysis metadata to Firestore...");
 
-      // Skip Storage Upload (User on free plan / constrained)
-      // Convert image to Base64 String
-      String base64Image = base64Encode(fabricImageBytes!);
-
-      // Convert colors to Map structure to avoid "Nested arrays not supported" error
-      List<Map<String, int>> formattedColors = dominantColors.map((c) {
-        if (c.length >= 3) {
-          return {
-            'r': c[0],
-            'g': c[1],
-            'b': c[2],
-          };
-        }
-        return {'r': 0, 'g': 0, 'b': 0};
-      }).toList();
-
-      // Save Metadata + Image String to Firestore
+      // Save Metadata to Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -475,18 +387,16 @@ class _HomeViewState extends State<HomeView>
           .add({
         'userId': user.uid,
         'timestamp': FieldValue.serverTimestamp(),
-        'imageUrl': base64Image, // Storing Base64 here instead of URL
-        'isBase64': true, // Flag to help UI decode it
-        'colors': formattedColors,
-        'suggestedUse': use,
-        'platform': ApiConfig.isEmulator ? "emulator" : "real_device",
-        'device_ip': ApiConfig.baseUrl,
+        'imagePath': fabricImagePath,
+        'dominantColors': dominantColors,
+        'suggestedUse': suggestedUse,
+        'analysisType': 'on-device-color-extraction',
+        'createdAt': Timestamp.now(),
       });
 
-      print("✅ Analysis Data (Base64) Saved to Firestore");
+      print("✅ Analysis Metadata Saved to Firestore");
       if (mounted) {
         setState(() {
-          _isSaving = false;
           _saveSuccess = true;
         });
       }
@@ -494,11 +404,9 @@ class _HomeViewState extends State<HomeView>
       print("⚠️ Failed to save analysis history: $e");
       if (mounted) {
         setState(() {
-          _isSaving = false;
           _saveSuccess = false;
         });
 
-        // Use QuickAlert for Error
         QuickAlert.show(
           context: context,
           type: QuickAlertType.error,
@@ -511,10 +419,12 @@ class _HomeViewState extends State<HomeView>
 
   // Removing _showSnackBar as we use QuickAlert now (or just inline it)
 
-  // Helper to convert RGB list to Color
-  Color _rgbToColor(List<int> rgb) {
-    if (rgb.length < 3) return Colors.black;
-    return Color.fromRGBO(rgb[0], rgb[1], rgb[2], 1.0);
+  // Helper to convert RGB map to Color
+  Color _rgbToColor(Map<String, int> rgb) {
+    if (rgb['r'] == null || rgb['g'] == null || rgb['b'] == null) {
+      return Colors.black;
+    }
+    return Color.fromRGBO(rgb['r']!, rgb['g']!, rgb['b']!, 1.0);
   }
 
   // Helper to get hex string
@@ -523,561 +433,777 @@ class _HomeViewState extends State<HomeView>
   }
 
   @override
-  bool get wantKeepAlive => true; // Keep state alive
-
-  @override
   Widget build(BuildContext context) {
-    super.build(context); // Required by AutomaticKeepAliveClientMixin
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(12, 60, 12, 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Video Header Section
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: SizedBox(
-              height: 250,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Video Background
-                  _videoController.value.isInitialized
-                      ? VideoPlayer(_videoController)
-                      : Container(color: Colors.black),
-                  // Dark Overlay
-                  Container(
+    final String displayName = _userData?['name']?.toString() ??
+        _user?.displayName ??
+        _user?.email?.split('@')[0] ??
+        "Arousing";
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 45),
+            // HEADER BAR
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (c) => const ProfilePage())),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.transparent
-                        ],
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: const Color(0xFFCCFF00), width: 1.5),
+                    ),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color(0xFF1A1A1A),
+                      backgroundImage: _userData?['photoUrl'] != null
+                          ? NetworkImage(_userData?['photoUrl'])
+                          : null,
+                      child: _userData?['photoUrl'] == null
+                          ? const Icon(Icons.person,
+                              color: Colors.white54, size: 20)
+                          : null,
                     ),
                   ),
-                  // Text Content
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Hello,",
+                      style: GoogleFonts.poppins(
+                          color: Colors.white54, fontSize: 13, height: 1.2),
+                    ),
+                    Row(
                       children: [
-                        const Text("Hello",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
                         Text(
-                          _userData?['name']?.toUpperCase() ??
-                              _user?.displayName?.toUpperCase() ??
-                              _user?.email?.split('@')[0].toUpperCase() ??
-                              "DESIGNER",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "Welcome back to your studio.",
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                          displayName,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          // 2. Hero Card (Fabric Analysis)
-          GestureDetector(
-            onTap: captureFabricImage,
-            child: Container(
-              width: double.infinity,
-              height: fabricImageBytes != null
-                  ? 270
-                  : 220, // Increased height to prevent overflow
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2E2E2E), Color(0xFF1A1A1A)], // Dark card
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+              ],
+            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.1, end: 0),
+
+            const SizedBox(height: 30),
+
+            // MAIN FEATURE CARD (DAILY CHALLENGE STYLE)
+            GestureDetector(
+              onTap: captureFabricImage,
+              child: Container(
+                width: double.infinity,
+                height: 220,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(36),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2C1A3A), Color(0xFF1A1A1A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.purple.withOpacity(0.1),
+                      blurRadius: 40,
+                      spreadRadius: -10,
+                    )
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(36),
+                  child: Stack(
                     children: [
-                      const Text(
-                        "Fabric\nAnalysis",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isUploading
-                            ? "Analyzing..."
-                            : analysisCompleted
-                                ? "Scan Complete!"
-                                : "Scan to analyze texture",
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Spacer(),
-
-                      // Avatars or Status
-                      Row(
-                        children: [
-                          _buildMiniAvatar(Colors.purple, "A"),
-                          Transform.translate(
-                              offset: const Offset(-10, 0),
-                              child: _buildMiniAvatar(Colors.blue, "B")),
-                          Transform.translate(
-                              offset: const Offset(-20, 0),
-                              child: _buildMiniAvatar(Colors.orange, "C")),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.arrow_forward_rounded,
-                              color: Colors.white, size: 20),
-                        ],
-                      ),
-
-                      // Analyze Button (Visible when image is captured)
-                      if (fabricImageBytes != null) // Check for bytes
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: ElevatedButton.icon(
-                            onPressed: _isUploading ? null : uploadFabricImage,
-                            icon: _isUploading
-                                ? const SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: Colors.white))
-                                : const Icon(Icons.analytics_outlined,
-                                    size: 16),
-                            label: Text(
-                                _isUploading ? "Analyzing..." : "Analyze Now"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  // 3D Character/Image Placeholder (Right side)
-                  // Using Scan Icon/Image if captured
-                  Positioned(
-                    right: -20,
-                    bottom: -20,
-                    top: 20,
-                    child: fabricImageBytes != null // Check for bytes
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.memory(
-                              // Use Image.memory
-                              fabricImageBytes!,
-                              width:
-                                  120, // Reduced width to make room for button
-                              height: 120,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Icon(
-                            Icons.document_scanner_outlined,
-                            size: 140,
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Search & Quick Actions Removed
-
-          // 3. Analysis Results Section (Modernized Summary)
-          if (analysisCompleted && dominantColors.isNotEmpty) ...[
-            const SizedBox(height: 35),
-
-            // SUMMARY CARD
-            Container(
-              key: _resultsKey,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Fabric Report",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _isSaving
-                              ? Colors.orange[50]
-                              : (_saveSuccess
-                                  ? Colors.green[50]
-                                  : Colors.red[50]),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _isSaving
-                                ? Colors.orange[100]!
-                                : (_saveSuccess
-                                    ? Colors.green[100]!
-                                    : Colors.red[100]!),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            if (_isSaving)
-                              const SizedBox(
-                                width: 12,
-                                height: 12,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.orange),
+                      Positioned.fill(
+                        child: _videoController.value.isInitialized
+                            ? FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                  width: _videoController.value.size.width,
+                                  height: _videoController.value.size.height,
+                                  child: VideoPlayer(_videoController),
+                                ),
                               )
-                            else
-                              Icon(
-                                  _saveSuccess
-                                      ? Icons.cloud_done
-                                      : Icons.error_outline,
-                                  size: 14,
-                                  color:
-                                      _saveSuccess ? Colors.green : Colors.red),
-                            const SizedBox(width: 6),
-                            Text(
-                              _isSaving
-                                  ? "Saving..."
-                                  : (_saveSuccess ? "Saved" : "Failed"),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _isSaving
-                                    ? Colors.orange
-                                    : (_saveSuccess
-                                        ? Colors.green
-                                        : Colors.red),
+                            : Container(color: Colors.black),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withOpacity(0.7),
+                                Colors.transparent,
+                              ],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Uploaded fabric image preview (bottom-right) - Rendered behind button now
+                      if (fabricImageBytes != null)
+                        Positioned(
+                          right: -10,
+                          bottom: -20,
+                          child: Hero(
+                            tag: 'scan_result',
+                            child: Container(
+                              width: 160,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(28),
+                                image: DecorationImage(
+                                  image: MemoryImage(fabricImageBytes!),
+                                  fit: BoxFit.cover,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.purple.withOpacity(0.3),
+                                    blurRadius: 30,
+                                  )
+                                ],
                               ),
+                            )
+                                .animate()
+                                .fadeIn(delay: 200.ms, duration: 600.ms)
+                                .slideY(begin: 0.2, end: 0),
+                          ),
+                        ),
+                      // Logo (bottom-right when no fabric image)
+                      if (fabricImageBytes == null)
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: Opacity(
+                            opacity: 0.85,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                height: 55,
+                                width: 55,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(28.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Fashion\nIntelligence",
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 38,
+                                fontWeight: FontWeight.w900,
+                                height: 0.9,
+                                letterSpacing: -1.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                              ),
+                            )
+                                .animate()
+                                .fadeIn(delay: 200.ms, duration: 600.ms)
+                                .slideY(begin: 0.2, end: 0),
+                            const SizedBox(height: 12),
+                            const Spacer(),
+                            Row(
+                              children: [
+                                if (_isAnalyzing)
+                                  const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                else ...[
+                                  _buildMiniStackAvatars(),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.arrow_forward_rounded,
+                                      color: Colors.white, size: 20),
+                                ],
+                                const Spacer(),
+                                if (fabricImageBytes != null &&
+                                    !analysisCompleted)
+                                  ElevatedButton(
+                                    onPressed: _isAnalyzing
+                                        ? null
+                                        : analyzeFabricLocally,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      elevation: 8,
+                                      shadowColor:
+                                          Colors.white.withOpacity(0.5),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 20, vertical: 12),
+                                    ),
+                                    child: Text(
+                                      "Analyze Now",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ).animate().fadeIn(duration: 300.ms).scale(),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // Detail Row 1: Date & Time
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_today_rounded,
-                          size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Captured: ${DateTime.now().toString().split(' ')[0]}",
-                        style: TextStyle(color: Colors.grey[800], fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Detail Row 2: Suggested Use
-                  Row(
-                    children: [
-                      Icon(Icons.style_outlined,
-                          size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Text(
-                        suggestedUse ?? "Analyzing...",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
 
             const SizedBox(height: 24),
 
-            const Text(
-              "Detected Colors",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
+            // AI PROMPT BAR
+            Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 140, // Taller for modern look
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: dominantColors.length,
-                itemBuilder: (context, index) {
-                  final color = _rgbToColor(dominantColors[index]);
-                  final hex = _colorToHex(color);
-                  final isDark = ThemeData.estimateBrightnessForColor(color) ==
-                      Brightness.dark;
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Color(0xFFCCFF00), size: 22),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      "Ask away! I'm your stylist",
+                      style: GoogleFonts.poppins(
+                          color: Colors.white38,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  Container(
+                    height: 32,
+                    width: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.mic_none_rounded,
+                        color: Colors.white70, size: 18),
+                  ),
+                ],
+              ),
+            )
+                .animate()
+                .fadeIn(delay: 500.ms, duration: 600.ms)
+                .slideY(begin: 0.3, end: 0),
 
-                  return GestureDetector(
-                    onTap: () {
-                      // Copy to clipboard or show detail (simplified to snackbar here)
-                      QuickAlert.show(
-                        context: context,
-                        type: QuickAlertType.success,
-                        title: 'Copied',
-                        text: "Color $hex copied!",
-                        confirmBtnColor: color,
-                        autoCloseDuration: const Duration(seconds: 2),
-                      );
-                    },
-                    child: Container(
-                      width: 100,
-                      margin: const EdgeInsets.only(right: 16),
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 8),
+            const SizedBox(height: 30),
+
+            // NEW SECTION: CAPTURED IMAGE PREVIEW (Visible after capture)
+            if (fabricImageBytes != null) ...[
+              _buildSectionHeader("Captured Fabric", "Clear", onActionTap: () {
+                setState(() {
+                  fabricImageBytes = null;
+                  fabricImagePath = null;
+                  analysisCompleted = false;
+                  dominantColors = [];
+                  suggestedUse = null;
+                });
+              }).animate().fadeIn().slideX(begin: -0.1, end: 0),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: captureFabricImage, // Allow re-capture by tapping
+                child: Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(
+                        color: const Color(0xFFCCFF00).withOpacity(0.3),
+                        width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFCCFF00).withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: -5,
+                      )
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.memory(fabricImageBytes!, fit: BoxFit.cover),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.5),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          // Shine effect
-                          Positioned(
-                            top: 0,
-                            right: 0,
+                        ),
+                        if (!analysisCompleted && !_isAnalyzing)
+                          Center(
                             child: Container(
-                              width: 50,
-                              height: 50,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
-                                gradient: RadialGradient(
-                                  center: Alignment.topRight,
-                                  radius: 1.0,
-                                  colors: [
-                                    Colors.white.withOpacity(0.3),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(24),
+                                color: const Color(0xFFCCFF00),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "Ready to Analyze",
+                                style: GoogleFonts.outfit(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
                           ),
+                      ],
+                    ),
+                  ),
+                ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+              ),
+              const SizedBox(height: 30),
+            ],
 
-                          // Content
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
+            const SizedBox(height: 30),
+
+            // SECTION: AI STYLING
+            _buildSectionHeader("AI Styling", null)
+                .animate()
+                .fadeIn(delay: 600.ms)
+                .slideX(begin: -0.1, end: 0),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 160,
+              child: Row(
+                children: [
+                  _buildActionCard(
+                    "Start AI Styling",
+                    "Add 0/5",
+                    Icons.add_circle_outline_rounded,
+                    onTap: captureFabricImage,
+                  ),
+                  const SizedBox(width: 16),
+                  _buildActionCard(
+                    "History",
+                    "10/5",
+                    Icons.history_toggle_off_rounded,
+                    onTap: widget.onHistoryTap,
+                  ),
+                ],
+              ),
+            )
+                .animate()
+                .fadeIn(delay: 700.ms)
+                .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1)),
+            const SizedBox(height: 30),
+
+            // SECTION: TRENDING / INNOVATIONS (ANALYSIS RESULTS)
+            if (analysisCompleted && dominantColors.isNotEmpty) ...[
+              _buildSectionHeader("Analysis Result", "Details"),
+              const SizedBox(height: 16),
+              Container(
+                key: _resultsKey,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                      color: const Color(0xFFCCFF00).withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFCCFF00).withOpacity(0.05),
+                      blurRadius: 30,
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: MemoryImage(fabricImageBytes!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (index == 0)
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Align(
-                                    alignment: Alignment.topRight,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(Icons.star,
-                                          color: Colors.white, size: 14),
-                                    ),
-                                  ),
-                                )
-                              else
-                                const Spacer(),
-
-                              const Spacer(),
-
-                              // Hex Pill
-                              Container(
-                                margin: const EdgeInsets.all(12),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Colors.black
-                                      .withOpacity(0.2), // Glass feel
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Text(
-                                  hex,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                              Text(
+                                suggestedUse ?? "Analyzed Fabric",
+                                style: GoogleFonts.outfit(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    letterSpacing: 0.5,
+                                    fontSize: 16),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    "AI Style Intelligence",
+                                    style: GoogleFonts.poppins(
+                                        color: Colors.white38, fontSize: 11),
                                   ),
-                                ),
+                                  if (_saveSuccess) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.verified_rounded,
+                                        color: Color(0xFFCCFF00), size: 14),
+                                  ],
+                                ],
                               ),
                             ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: dominantColors.take(4).map((rgb) {
+                        final color = _rgbToColor(rgb);
+                        return Container(
+                          width: 55,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.1)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              _colorToHex(color).substring(1),
+                              style: TextStyle(
+                                  color: color.computeLuminance() > 0.5
+                                      ? Colors.black87
+                                      : Colors.white70,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .scale(begin: const Offset(0.95, 0.95)),
+              const SizedBox(height: 40),
+            ],
+
+            // NEW SECTION: STYLE INSPIRATION (main7.jpg)
+            _buildSectionHeader("AI Style Inspiration", "Explore")
+                .animate()
+                .fadeIn(delay: 800.ms)
+                .slideX(begin: -0.1, end: 0),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              height: 240,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset('assets/images/main7.jpg', fit: BoxFit.cover),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.8),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Trending Textures",
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            "Discover how AI redefines summer collections",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
-            ),
-          ],
+            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.1, end: 0),
 
-          const SizedBox(height: 30),
+            const SizedBox(height: 30),
 
-          // 5. AI Styling Grid
-          const Text(
-            "AI Styling",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              // Start AI Styling
-              Expanded(
-                child: Container(
-                  height: 140,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Start AI Styling",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // NEW SECTION: FASHION FORECAST (main8.jpg)
+            _buildSectionHeader("Fashion Forecast", "View All")
+                .animate()
+                .fadeIn(delay: 1000.ms)
+                .slideX(begin: -0.1, end: 0),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: const Color(0xFF1A1A1A),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Add 0/5",
-                              style: TextStyle(
-                                  color: Colors.black38, fontSize: 12)),
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.05),
-                              shape: BoxShape.circle,
+                              color: const Color(0xFFCCFF00).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.add,
-                                color: Colors.black, size: 16),
+                            child: Text(
+                              "NEXT GEN",
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFFCCFF00),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Sustain Style",
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            "Eco-friendly fabric analysis",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white38,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
+                  Expanded(
+                    flex: 3,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
+                      ),
+                      child: Image.asset('assets/images/main8.jpg',
+                          fit: BoxFit.cover),
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1, end: 0),
+
+            const SizedBox(height: 100), // Bottom padding for navbar
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String? action,
+      {VoidCallback? onActionTap}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+          ),
+        ),
+        if (action != null)
+          GestureDetector(
+            onTap: onActionTap,
+            child: Text(
+              action,
+              style: GoogleFonts.poppins(
+                color: const Color(0xFFCCFF00),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard(String title, String subtitle, IconData icon,
+      {VoidCallback? onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF1E1E1E),
+                const Color(0xFF151515),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCCFF00).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: const Color(0xFFCCFF00), size: 22),
+              ),
+              const Spacer(),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 16),
-              // History
-              Expanded(
-                child: Container(
-                  height: 140,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "History",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("10/5",
-                              style: TextStyle(
-                                  color: Colors.black38, fontSize: 12)),
-                          const Icon(Icons.history_toggle_off,
-                              color: Colors.black38, size: 24),
-                        ],
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  color: Colors.white38,
+                  fontSize: 12,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStackAvatars() {
+    return SizedBox(
+      width: 60,
+      height: 24,
+      child: Stack(
+        children: [
+          Positioned(left: 0, child: _buildMiniAvatar(Colors.purple, "A")),
+          Positioned(left: 14, child: _buildMiniAvatar(Colors.blue, "B")),
+          Positioned(
+              left: 28, child: _buildMiniAvatar(const Color(0xFFCCFF00), "C")),
         ],
       ),
     );
@@ -1090,14 +1216,15 @@ class _HomeViewState extends State<HomeView>
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.black, width: 2),
+        border: Border.all(color: const Color(0xFF1A1A1A), width: 2),
       ),
       child: Center(
-          child: Text(text,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold))),
+        child: Text(
+          text,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 }

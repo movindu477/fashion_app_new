@@ -3,6 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:quickalert/quickalert.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 
 class FabricLibraryPage extends StatelessWidget {
   const FabricLibraryPage({Key? key}) : super(key: key);
@@ -16,27 +21,27 @@ class FabricLibraryPage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: const Color(0xFF0F0F0F),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 120.0,
             floating: false,
             pinned: true,
-            backgroundColor: const Color(0xFFF9F9F9),
+            backgroundColor: const Color(0xFF0F0F0F),
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-              title: const Text(
+              title: Text(
                 "Fabric Library",
-                style: TextStyle(
-                  color: Colors.black,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
                   fontWeight: FontWeight.w900,
                   fontSize: 24,
                   letterSpacing: -0.5,
                 ),
-              ),
-              background: Container(color: const Color(0xFFF9F9F9)),
+              ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+              background: Container(color: const Color(0xFF0F0F0F)),
             ),
           ),
           StreamBuilder<QuerySnapshot>(
@@ -62,32 +67,32 @@ class FabricLibraryPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFF1A1A1A),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withOpacity(0.5),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               )
                             ],
                           ),
                           child: Icon(Icons.style_outlined,
-                              size: 48, color: Colors.grey[400]),
+                              size: 48, color: Colors.white.withOpacity(0.1)),
                         ),
                         const SizedBox(height: 24),
                         Text(
                           "Your Collection is Empty",
-                          style: TextStyle(
+                          style: GoogleFonts.outfit(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Scan fabrics to build your digital wardrobe",
-                          style: TextStyle(color: Colors.grey[500]),
+                          style: GoogleFonts.poppins(color: Colors.white38),
                         ),
                       ],
                     ),
@@ -96,19 +101,23 @@ class FabricLibraryPage extends StatelessWidget {
               }
 
               return SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.65, // Taller cards to prevent overflow
+                    childAspectRatio: 0.72,
                     crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    mainAxisSpacing: 20,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final doc = snapshot.data!.docs[index];
                       final data = doc.data() as Map<String, dynamic>;
-                      return _buildFabricCard(context, data);
+                      return _buildFabricCard(context, data, doc.id)
+                          .animate()
+                          .fadeIn(delay: (index * 100).ms, duration: 600.ms)
+                          .slideY(begin: 0.2, end: 0);
                     },
                     childCount: snapshot.data!.docs.length,
                   ),
@@ -121,157 +130,206 @@ class FabricLibraryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFabricCard(BuildContext context, Map<String, dynamic> data) {
-    // Handle Image Source (Base64 vs URL)
+  Widget _buildFabricCard(
+      BuildContext context, Map<String, dynamic> data, String docId) {
     final imageUrl = data['imageUrl'] as String?;
+    final imagePath = data['imagePath'] as String?;
     final isBase64 = data['isBase64'] == true;
-    final timestamp = (data['timestamp'] as Timestamp?)?.toDate();
     final suggestedUse = data['suggestedUse'] as String? ?? "Unknown";
-    final colors = _parseColors(data['colors']);
+    final colors = _parseColors(data['dominantColors'] ?? data['colors']);
 
     return GestureDetector(
-      onTap: () => _showFabricDetails(context, data),
+      onTap: () => _showFabricDetails(context, data, docId),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A), // Dark background for the whole card
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Expanded(
-              flex: 5, // Increased image ratio
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20), bottom: Radius.circular(0)),
-                    child: _buildImageWidget(imageUrl, isBase64),
-                  ),
-                  // Date Badge (Modernized)
-                  if (timestamp != null)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.2), width: 0.5),
-                        ),
-                        child: Text(
-                          "${timestamp.day}/${timestamp.month}",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 1. Image
+              _buildImageWidget(imageUrl, isBase64, imagePath),
 
-            // Content Section (Black description part)
-            Expanded(
-              flex: 2, // Compact description
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF121212), // Darker black for footer
-                  borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(0), bottom: Radius.circular(20)),
+              // 2. Dark Gradient Overlay (Bottom half)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.0),
+                        Colors.black.withOpacity(0.8),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
+              ),
+
+              // 3. Delete Button (Modern)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: GestureDetector(
+                  onTap: () => _confirmDelete(context, docId, imagePath),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 4. More Info Button (Top Right)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Icon(
+                    Icons.favorite_rounded,
+                    color: Colors.white.withOpacity(0.2),
+                    size: 14,
+                  ),
+                ),
+              ),
+
+              // 5. Content Overlay
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(28)),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.4),
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(28)),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             suggestedUse,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white, // White text
-                              height: 1.2,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Analyzed Texture",
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w400,
-                            ),
+                          const SizedBox(height: 12),
+                          // Action Pill (Modern Styled)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFCCFF00),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  "Detail",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              // Palette Button
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ...colors.take(1).map((c) => Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            color: c,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: c.withOpacity(0.4),
+                                                blurRadius: 4,
+                                              )
+                                            ],
+                                          ),
+                                        )),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-
-                    // Mini Color Palette Preview
-                    Row(
-                      children: [
-                        ...colors.take(3).map((c) => Align(
-                              widthFactor: 0.6,
-                              child: Container(
-                                width: 18,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: c,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: const Color(0xFF121212), width: 2),
-                                ),
-                              ),
-                            )),
-                        if (colors.length > 3)
-                          Container(
-                            margin: const EdgeInsets.only(left: 6),
-                            child: Text(
-                              "+${colors.length - 3}",
-                              style: TextStyle(
-                                  fontSize: 10, color: Colors.grey[600]),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper to handle both URL and Base64 images
-  Widget _buildImageWidget(String? source, bool isBase64) {
+  // Helper to handle URL, Base64, and Local File images
+  Widget _buildImageWidget(String? source, bool isBase64, [String? localPath]) {
+    if (localPath != null && File(localPath).existsSync()) {
+      return Image.file(File(localPath), fit: BoxFit.cover);
+    }
+
     if (source == null) {
       return Container(
-          color: Colors.grey[100],
-          child: const Icon(Icons.broken_image, color: Colors.grey));
+          color: const Color(0xFF121212),
+          child:
+              Icon(Icons.broken_image, color: Colors.white.withOpacity(0.05)));
     }
 
     if (isBase64) {
@@ -279,15 +337,15 @@ class FabricLibraryPage extends StatelessWidget {
         Uint8List bytes = base64Decode(source);
         return Image.memory(bytes, fit: BoxFit.cover);
       } catch (e) {
-        return Container(color: Colors.grey[200]);
+        return Container(color: const Color(0xFF121212));
       }
     } else {
       return Image.network(
         source,
         fit: BoxFit.cover,
         loadingBuilder: (_, child, p) =>
-            p == null ? child : Container(color: Colors.grey[100]),
-        errorBuilder: (_, __, ___) => Container(color: Colors.grey[100]),
+            p == null ? child : Container(color: const Color(0xFF121212)),
+        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF121212)),
       );
     }
   }
@@ -315,9 +373,11 @@ class FabricLibraryPage extends StatelessWidget {
     return result;
   }
 
-  void _showFabricDetails(BuildContext context, Map<String, dynamic> data) {
-    final colors = _parseColors(data['colors']);
+  void _showFabricDetails(
+      BuildContext context, Map<String, dynamic> data, String docId) {
+    final colors = _parseColors(data['dominantColors'] ?? data['colors']);
     final imageUrl = data['imageUrl'] as String?;
+    final imagePath = data['imagePath'] as String?;
     final isBase64 = data['isBase64'] == true;
 
     showModalBottomSheet(
@@ -330,7 +390,7 @@ class FabricLibraryPage extends StatelessWidget {
         maxChildSize: 0.95,
         builder: (_, scrollController) => Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: Color(0xFF121212),
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
@@ -360,7 +420,8 @@ class FabricLibraryPage extends StatelessWidget {
                         child: SizedBox(
                           height: 250,
                           width: double.infinity,
-                          child: _buildImageWidget(imageUrl, isBase64),
+                          child:
+                              _buildImageWidget(imageUrl, isBase64, imagePath),
                         ),
                       ),
                     ),
@@ -380,14 +441,15 @@ class FabricLibraryPage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF5200),
+                                  color: Color(0xFFCCFF00),
                                   letterSpacing: 1.0,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 data['suggestedUse'] ?? "Unknown Material",
-                                style: const TextStyle(
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
                                   fontSize: 28,
                                   fontWeight: FontWeight.w900,
                                   height: 1.1,
@@ -397,13 +459,35 @@ class FabricLibraryPage extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context); // Close detail view
+                            _confirmDelete(context, docId, imagePath);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: const Icon(Icons.delete_forever_rounded,
+                                color: Color(0xFFCCFF00), size: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.1)),
                           ),
-                          child: const Icon(Icons.share_outlined, size: 20),
+                          child: const Icon(Icons.share_outlined,
+                              color: Colors.white, size: 20),
                         ),
                       ],
                     ),
@@ -411,9 +495,10 @@ class FabricLibraryPage extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // Color Palette Section
-                    const Text(
+                    Text(
                       "Extracted Palette",
-                      style: TextStyle(
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
@@ -429,12 +514,13 @@ class FabricLibraryPage extends StatelessWidget {
                         return Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey[200]!),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.08)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withOpacity(0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               )
@@ -464,15 +550,16 @@ class FabricLibraryPage extends StatelessWidget {
                                 children: [
                                   Text(
                                     hex,
-                                    style: const TextStyle(
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
                                   ),
                                   Text(
                                     "RGB: ${color.red}, ${color.green}, ${color.blue}",
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white38,
                                       fontSize: 10,
                                     ),
                                   ),
@@ -493,5 +580,67 @@ class FabricLibraryPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context, String docId, String? imagePath) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      title: 'Delete Forever?',
+      text: 'This will remove the data and the local image file.',
+      confirmBtnText: 'Delete',
+      confirmBtnColor: const Color(0xFFCCFF00),
+      onConfirmBtnTap: () async {
+        Navigator.pop(context); // Close dialog
+        await _deleteAnalysis(context, docId, imagePath);
+      },
+      showCancelBtn: true,
+    );
+  }
+
+  Future<void> _deleteAnalysis(
+      BuildContext context, String docId, String? imagePath) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      // 1. Delete Firestore Document
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('analyses')
+          .doc(docId)
+          .delete();
+
+      // 2. Delete Local File (Auto-cleanup to save storage)
+      if (imagePath != null) {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          debugPrint("🗑️ Deleting local file: $imagePath");
+          await file.delete();
+        }
+      }
+
+      if (context.mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Deleted',
+          text: 'Analysis and image removed successfully!',
+          autoCloseDuration: const Duration(seconds: 1),
+          showConfirmBtn: false,
+        );
+      }
+    } catch (e) {
+      debugPrint("❌ Delete error: $e");
+      if (context.mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'Failed to delete: $e',
+        );
+      }
+    }
   }
 }

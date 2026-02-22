@@ -2,9 +2,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
+import 'dart:ui';
 import 'login.dart';
 import 'edit_profile_page.dart';
 
@@ -24,7 +27,7 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isUploading = false;
 
   @override
-  bool get wantKeepAlive => true; // Keeps page alive
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -47,43 +50,17 @@ class _ProfilePageState extends State<ProfilePage>
           });
         }
       } catch (e) {
-        // Handle error
+        debugPrint("Error fetching user data: $e");
       }
     }
-  }
-
-  void _navigateToEditProfile() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            EditProfilePage(
-          userData: _userData,
-          onUpdateComplete: _fetchUserData,
-        ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(-1.0, 0.0); // Slide from Left
-          const end = Offset.zero;
-          const curve = Curves.easeOutCubic;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-      ),
-    );
   }
 
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
       builder: (context) => SafeArea(
         child: Wrap(
@@ -122,42 +99,29 @@ class _ProfilePageState extends State<ProfilePage>
       });
 
       try {
-        // 1. Upload to Firebase Storage
         String filePath = 'user_profiles/${_user!.uid}_profile.jpg';
         Reference ref = FirebaseStorage.instance.ref().child(filePath);
         UploadTask uploadTask = ref.putData(bytes);
-
-        // Wait for upload to complete
         TaskSnapshot snapshot = await uploadTask;
-
-        // 2. Get URL
         String downloadUrl = await snapshot.ref.getDownloadURL();
 
-        // 3. Update Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(_user!.uid)
             .update({'photoUrl': downloadUrl});
 
-        // 4. Update Auth Profile
         await _user!.updatePhotoURL(downloadUrl);
 
-        // 5. Update Local State (Clear local file to use network url now)
         if (mounted) {
           setState(() {
-            _localImageBytes = null; // Switch back to network image
+            _localImageBytes = null;
           });
           await _fetchUserData();
         }
       } catch (e) {
-        print("Error uploading image: $e");
+        debugPrint("Error uploading image: $e");
         if (mounted) {
-          setState(() {
-            _localImageBytes = null; // Revert on failure
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to upload image: $e")),
-          );
+          setState(() => _localImageBytes = null);
         }
       } finally {
         if (mounted) setState(() => _isUploading = false);
@@ -179,14 +143,11 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // Determine Display Name
-    final displayName = _userData?['name'] ??
+    final String displayName = _userData?['name']?.toString() ??
         _user?.displayName ??
         _user?.email?.split('@')[0] ??
         "Designer";
-    final email = _userData?['email'] ?? _user?.email ?? "janeper01@gmail.com";
 
-    // Determine Photo Provider
     final photoUrl = _userData?['photoUrl'] ?? _user?.photoURL;
     ImageProvider imageProvider;
     if (_localImageBytes != null) {
@@ -198,150 +159,234 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: Column(
-        children: [
-          // 1. Dark Header Section
-          Container(
-            padding:
-                const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 30),
-            decoration: const BoxDecoration(
-              color: Color(0xFF18191E), // Dark nearly black background
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 140.0,
+            floating: false,
+            pinned: true,
+            backgroundColor: const Color(0xFF0F0F0F),
+            surfaceTintColor: Colors.transparent,
+            leadingWidth: 70,
+            leading: widget.onBack != null
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.15)),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white, size: 16),
+                        onPressed: widget.onBack,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  )
+                : null,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: EdgeInsets.only(
+                  left: widget.onBack != null ? 70 : 20, bottom: 16),
+              title: Text(
+                "Profile",
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+              ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1A1A1A),
+                      Color(0xFF0F0F0F),
+                    ],
+                  ),
+                ),
               ),
             ),
-            child: Column(
-              children: [
-                // Top Bar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      // Custom Back Button
-                      onTap: () {
-                        if (widget.onBack != null) {
-                          widget.onBack!();
-                        }
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_back_ios_new,
-                            color: Colors.white, size: 20),
-                      ),
-                    ),
-                    const Text(
-                      "Profile",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    _buildHeaderIconBtn(Icons.settings_outlined, () {}),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Profile Image with Edit Button
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white12,
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey.shade800,
-                        backgroundImage: imageProvider,
-                        child: _isUploading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : null,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _showImageSourceDialog,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5200), // Orange accent
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: const Color(0xFF18191E), width: 3),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Name & Email
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22, // Size adjusted to look like image
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  email,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 13,
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Quick Actions Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildQuickActionItem(
-                        Icons.notifications_none, "Notification"),
-                    _buildQuickActionItem(Icons.card_giftcard, "Voucher"),
-                    _buildQuickActionItem(Icons.history, "History"),
-                  ],
-                ),
-              ],
-            ),
           ),
-
-          // 2. Menu List Section
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMenuTile(Icons.person_outline, "Edit Profile",
-                      onTap: _navigateToEditProfile),
-                  _buildMenuTile(
-                      Icons.location_on_outlined, "Address Management"),
-                  _buildMenuTile(Icons.headset_mic_outlined, "Help & Support"),
-                  _buildMenuTile(Icons.settings_outlined, "Setting"),
-                  _buildMenuTile(Icons.logout, "Log out",
-                      isDestructive: true, onTap: _logout),
+                  // 1. TOP HEADER (Refined)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Hi, $displayName!",
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _buildMemberSince(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white38,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: _showImageSourceDialog,
+                        child: Hero(
+                          tag: 'profile_avatar',
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: const Color(0xFFCCFF00), width: 2),
+                            ),
+                            child: CircleAvatar(
+                              radius: 38,
+                              backgroundColor: Colors.white12,
+                              backgroundImage: imageProvider,
+                              child: _isUploading
+                                  ? const CircularProgressIndicator(
+                                      color: Color(0xFFCCFF00), strokeWidth: 2)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideY(begin: 0.1, end: 0),
 
-                  const SizedBox(height: 100), // Bottom padding for nav bar
+                  const SizedBox(height: 40),
+
+                  // 2. STYLE STATS
+                  Text(
+                    "Style Statistics",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  _buildStatTile(
+                    "Email",
+                    _userData?['email'] ?? _user?.email ?? "—",
+                    Icons.email_outlined,
+                  ),
+                  _buildStatTile(
+                    "Member Since",
+                    _buildMemberSince(),
+                    Icons.calendar_today_outlined,
+                  ),
+                  _buildStatTile(
+                    "Account ID",
+                    _user?.uid != null
+                        ? "#${_user!.uid.substring(0, 8).toUpperCase()}"
+                        : "—",
+                    Icons.fingerprint_rounded,
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 40),
+
+                  // 3. YOUR JOURNEY
+                  Text(
+                    "Your Journey",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildProgressCard(
+                          _userData?['name']?.toString() ?? displayName,
+                          "Your Name",
+                          100,
+                          const Color(0xFFCCFF00),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildProgressColorCard(
+                          _user?.email?.split('@')[0] ?? "Designer",
+                          "Username",
+                          75,
+                          const Color(0xFFCCFF00),
+                        ),
+                      ),
+                    ],
+                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 40),
+
+                  // 4. SETTINGS & ACTIONS
+                  Text(
+                    "Preferences",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildActionItem(Icons.edit_outlined, "Edit Profile",
+                            onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (c) => EditProfilePage(
+                                  userData: _userData,
+                                  onUpdateComplete: _fetchUserData)));
+                        }),
+                        Divider(
+                            color: Colors.white.withOpacity(0.05), indent: 56),
+                        _buildActionItem(Icons.logout_rounded, "Logout",
+                            isDestructive: true, onTap: _logout),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 120), // Padding for nav bar
                 ],
               ),
             ),
@@ -351,88 +396,202 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildHeaderIconBtn(IconData icon, VoidCallback onTap) {
+  String _buildMemberSince() {
+    final createdAt = _userData?['createdAt'];
+    if (createdAt != null && createdAt is Timestamp) {
+      final dt = createdAt.toDate();
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      return 'Member since ${months[dt.month - 1]} ${dt.year}';
+    }
+    return 'Member since —';
+  }
+
+  Widget _buildStatTile(String title, String subtitle, IconData icon) {
     return Container(
-      width: 40,
-      height: 40,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        shape: BoxShape.circle,
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Icon(icon, color: Colors.white, size: 20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.white70, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16),
+            ),
+          ),
+          Text(
+            subtitle,
+            style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.bookmark_outline_rounded,
+              color: Colors.white24, size: 20),
+        ],
+      ),
     );
   }
 
-  Widget _buildQuickActionItem(IconData icon, String label) {
+  Widget _buildProgressCard(
+      String title, String level, int progress, Color color) {
     return Container(
-      width: 100, // Fixed width for uniformity
-      height: 80,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF25262B), // Slightly lighter dark shade
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        color: color,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          )
+        ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                progress.toString(),
+                style: GoogleFonts.outfit(
+                    color: Colors.black,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold),
+              ),
+              _buildMiniProgressBars(progress, Colors.black26),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
+            "Keep it up!",
+            style: GoogleFonts.poppins(
+                color: Colors.black54,
+                fontSize: 11,
+                fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+                color: Colors.black, fontSize: 22, fontWeight: FontWeight.w800),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuTile(IconData icon, String title,
-      {bool isDestructive = false, VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isDestructive ? Colors.redAccent : Colors.black54,
-              size: 22,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: isDestructive
-                      ? Colors.redAccent
-                      : const Color(0xFF1F2024),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+  Widget _buildProgressColorCard(
+      String title, String level, int progress, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                progress.toString(),
+                style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold),
               ),
-            ),
-            if (!isDestructive)
-              const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
-          ],
+              _buildMiniProgressBars(progress, color),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Weekly Goal",
+            style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: GoogleFonts.outfit(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniProgressBars(int progress, Color color) {
+    return Row(
+      children: List.generate(5, (index) {
+        bool active = (index + 1) * 20 <= progress;
+        return Container(
+          width: 4,
+          height: 12,
+          margin: const EdgeInsets.only(left: 2),
+          decoration: BoxDecoration(
+            color: active ? color : color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildActionItem(IconData icon, String title,
+      {VoidCallback? onTap, bool isDestructive = false}) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon,
+          color: isDestructive ? Colors.orangeAccent : Colors.white70),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          color: isDestructive ? Colors.orangeAccent : Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
       ),
+      trailing: isDestructive
+          ? null
+          : const Icon(Icons.chevron_right, color: Colors.white24),
     );
   }
 }
