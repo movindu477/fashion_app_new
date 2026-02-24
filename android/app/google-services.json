@@ -7,12 +7,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1072903467056:android:58c9c3ddb93a54a3a23df5",
+        "mobilesdk_app_id": "1:1072903467056:android:46cb1a0ad5678a3fa23df5",
         "android_client_info": {
-          "package_name": "com.example.flutterfashion_app"
+          "package_name": "com.example.fashion_app_new"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1072903467056-bik3cvhm5cnljrtkaivps2f4rvqs7k8s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fashion_app_new",
+            "certificate_hash": "bc5750974276439023935e87495fb58dfe99f8fb"
+          }
+        },
+        {
+          "client_id": "1072903467056-iamj9lnt4h4asb6qogelm2f5s2h98887.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDpncjspuFVLXx2UBJ-6craF2HtvM6rEwo"
@@ -20,7 +33,71 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1072903467056-iamj9lnt4h4asb6qogelm2f5s2h98887.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1072903467056-oovqah2q5ncfq669g1mm9454k4d6r8aj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterfashionApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1072903467056:android:58c9c3ddb93a54a3a23df5",
+        "android_client_info": {
+          "package_name": "com.example.flutterfashion_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1072903467056-9pj0du021ocsh64kkbd0am7ca9qgfbn4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutterfashion_app",
+            "certificate_hash": "e1aad4c768df6a945dda2e983744b287f037ccb0"
+          }
+        },
+        {
+          "client_id": "1072903467056-o8e4jmf4qkmea3d9a3avl0j96jpr0sjo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutterfashion_app",
+            "certificate_hash": "bc5750974276439023935e87495fb58dfe99f8fb"
+          }
+        },
+        {
+          "client_id": "1072903467056-iamj9lnt4h4asb6qogelm2f5s2h98887.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpncjspuFVLXx2UBJ-6craF2HtvM6rEwo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1072903467056-iamj9lnt4h4asb6qogelm2f5s2h98887.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1072903467056-oovqah2q5ncfq669g1mm9454k4d6r8aj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterfashionApp"
+              }
+            }
+          ]
         }
       }
     }

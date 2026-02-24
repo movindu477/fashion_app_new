@@ -7,6 +7,7 @@ import 'homepage.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -161,6 +162,41 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       });
     }
     _onAuthSuccess('Welcome!', 'Account Created Successfully');
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _loading = true);
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        // Update user data in Firestore
+        await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+          "name": user.displayName,
+          "email": user.email,
+          "uid": user.uid,
+          "photoUrl": user.photoURL,
+          "lastLogin": FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      _onAuthSuccess('Welcome!', 'Google Login Successful');
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   void _onAuthSuccess(String title, String text) async {
@@ -350,12 +386,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.07),
+                      color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(40),
-                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -371,7 +408,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             height: 55,
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(25),
                               border: Border.all(color: Colors.white12),
                             ),
@@ -465,6 +502,70 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                     ),
                             ),
                           ).animate().fadeIn(delay: 1.seconds).scale(),
+
+                          const SizedBox(height: 24),
+
+                          // OR DIVIDER
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: Divider(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1))),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'OR',
+                                  style: GoogleFonts.poppins(
+                                      color: Colors.white24, fontSize: 12),
+                                ),
+                              ),
+                              Expanded(
+                                  child: Divider(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.1))),
+                            ],
+                          ).animate().fadeIn(delay: 1100.ms),
+
+                          const SizedBox(height: 24),
+
+                          // GOOGLE BUTTON
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: OutlinedButton(
+                              onPressed: _loading ? null : _handleGoogleSignIn,
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.2)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(40),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.network(
+                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                                    height: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Continue with Google',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(delay: 1200.ms)
+                              .slideY(begin: 0.2, end: 0),
                         ],
                       ),
                     ),
@@ -491,7 +592,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             boxShadow: active
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -534,9 +635,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
           child: TextFormField(
             controller: controller,

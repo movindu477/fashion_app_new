@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'welcome_page.dart';
+import 'views/welcome_page.dart';
+import 'views/homepage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +16,7 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
+
   runApp(const MyApp());
 }
 
@@ -216,9 +217,9 @@ class _SplashScreenState extends State<SplashScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.25),
+                    Colors.black.withValues(alpha: 0.25),
                     Colors.transparent,
-                    Colors.black.withOpacity(0.55),
+                    Colors.black.withValues(alpha: 0.55),
                   ],
                 ),
               ),
@@ -299,7 +300,7 @@ class _SplashScreenState extends State<SplashScreen>
                       Text(
                         'AI FASHION DESIGN',
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 6.5,
@@ -333,10 +334,10 @@ class _SplashScreenState extends State<SplashScreen>
                         width: _maxWidth,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(35),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.25)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25)),
                         ),
                         child: Stack(
                           alignment: Alignment.centerLeft,
@@ -367,7 +368,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     boxShadow: [
                                       BoxShadow(
                                         color: const Color(0xFFCCFF00)
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                         blurRadius: 18,
                                         spreadRadius: 2,
                                         offset: const Offset(0, 4),

@@ -152,7 +152,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     backgroundColor: const Color(0xFFCCFF00),
                     foregroundColor: Colors.black,
                     elevation: 8,
-                    shadowColor: const Color(0xFFCCFF00).withOpacity(0.3),
+                    shadowColor: const Color(0xFFCCFF00).withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                   ),
@@ -202,16 +202,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon,
-                color: const Color(0xFFCCFF00).withOpacity(0.7), size: 22),
+                color: const Color(0xFFCCFF00).withValues(alpha: 0.7),
+                size: 22),
             filled: true,
             fillColor: const Color(0xFF1A1A1A),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.05)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.05)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),

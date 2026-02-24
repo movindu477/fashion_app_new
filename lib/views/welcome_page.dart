@@ -85,9 +85,9 @@ class _WelcomePageState extends State<WelcomePage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.1),
+                          Colors.black.withValues(alpha: 0.1),
                           Colors.transparent,
-                          Colors.black.withOpacity(0.8),
+                          Colors.black.withValues(alpha: 0.8),
                         ],
                         stops: const [0.0, 0.4, 1.0],
                       ),
@@ -130,7 +130,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             _onboardingData[index]['description']!,
                             key: ValueKey('desc_$index'),
                             style: GoogleFonts.poppins(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -191,7 +191,8 @@ class _WelcomePageState extends State<WelcomePage> {
                         borderRadius: BorderRadius.circular(40),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFCCFF00).withOpacity(0.3),
+                            color:
+                                const Color(0xFFCCFF00).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),

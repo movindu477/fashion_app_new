@@ -24,6 +24,10 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
   page_transition: ^2.1.0
+  http: ^1.2.0
+  url_launcher: ^6.3.0
+  google_sign_in: ^6.2.1
+  in_app_purchase: ^3.2.0
 
 
 dev_dependencies:
@@ -53,6 +57,7 @@ flutter:
     - assets/images/home1.mp4
     - assets/images/logo.png
     - assets/images/main3.jpg
+    - assets/images/main3ori.jpg
     - assets/images/main4.jpg
     - assets/images/main5.jpg
     - assets/images/main6.jpg
