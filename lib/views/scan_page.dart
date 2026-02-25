@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quickalert/quickalert.dart';
 import '../services/color_analysis_service.dart';
 import '../services/gemini_service.dart';
+import '../services/fabric_classifier_service.dart';
+import 'dart:io';
 
 class ScanPage extends StatefulWidget {
   final VoidCallback? onHistoryTap;
@@ -30,6 +33,7 @@ class _ScanPageState extends State<ScanPage>
   List<Map<String, int>> dominantColors = [];
   bool analysisCompleted = false;
   String? suggestedUse;
+  FabricClassificationResult? _classificationResult;
 
   // Video Controller for background
   late VideoPlayerController _videoController;
@@ -99,22 +103,148 @@ class _ScanPageState extends State<ScanPage>
     super.dispose();
   }
 
-  Future<void> captureFabricImage() async {
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Select Image Source",
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Capturing fabric texture directly works best",
+              style: GoogleFonts.poppins(
+                color: Colors.white38,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSourceCard(
+                    "Camera",
+                    Icons.camera_rounded,
+                    () {
+                      Navigator.pop(context);
+                      captureFabricImage(ImageSource.camera);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildSourceCard(
+                    "Gallery",
+                    Icons.photo_library_rounded,
+                    () {
+                      Navigator.pop(context);
+                      captureFabricImage(ImageSource.gallery);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFFCCFF00), size: 32),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> captureFabricImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
+      source: source,
       maxWidth: 1024,
       maxHeight: 1024,
       imageQuality: 85,
     );
 
     if (image != null) {
-      final bytes = await image.readAsBytes();
-      setState(() {
-        fabricImageBytes = bytes;
-        fabricImagePath = image.path;
-        analysisCompleted = false;
-        dominantColors = [];
-      });
+      // Crop the image to focus on fabric texture
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: image.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Fabric Texture',
+            toolbarColor: const Color(0xFF1A1A1A),
+            toolbarWidgetColor: const Color(0xFFCCFF00),
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            aspectRatioPresets: [
+              CropAspectRatioPreset.square,
+            ],
+            activeControlsWidgetColor: const Color(0xFFCCFF00),
+          ),
+          IOSUiSettings(
+            title: 'Crop Fabric Texture',
+            aspectRatioPresets: [
+              CropAspectRatioPreset.square,
+            ],
+          ),
+        ],
+      );
+
+      if (croppedFile != null) {
+        final bytes = await File(croppedFile.path).readAsBytes();
+        setState(() {
+          fabricImageBytes = bytes;
+          fabricImagePath = croppedFile.path;
+          analysisCompleted = false;
+          dominantColors = [];
+        });
+      }
     }
   }
 
@@ -128,6 +258,47 @@ class _ScanPageState extends State<ScanPage>
     });
 
     try {
+      // 1. ML Fabric Classification Check
+      final result =
+          await FabricClassifierService().classify(File(fabricImagePath!));
+
+      if (result.score > 0.7) {
+        // Definitely not fabric
+        if (mounted) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Material Not Recognized',
+            text:
+                'This looks like a ${result.label} (${(result.confidence * 100).toStringAsFixed(0)}% confidence). Please capture a textile or fabric surface.',
+          );
+        }
+        setState(() => _isAnalyzing = false);
+        return;
+      } else if (result.score >= 0.3) {
+        // Uncertain material
+        if (mounted) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.warning,
+            title: 'Uncertain Material',
+            text:
+                'We are not sure if this is fabric (Confidence: ${(result.confidence * 100).toStringAsFixed(0)}%). Please try again with better lighting or a closer shot.',
+          );
+        }
+        setState(() => _isAnalyzing = false);
+        return;
+      }
+
+      // If we reach here, prediction < 0.3 (Strong Fabric Confidence)
+      print(
+          "✅ High confidence fabric detected: ${(result.confidence * 100).toStringAsFixed(2)}%");
+
+      setState(() {
+        _classificationResult = result;
+      });
+
+      // 2. Color Analysis
       final colors =
           await ColorAnalysisService.getDominantColors(fabricImagePath!);
 
@@ -369,7 +540,7 @@ class _ScanPageState extends State<ScanPage>
 
             // MAIN SCAN CARD
             GestureDetector(
-              onTap: captureFabricImage,
+              onTap: _showImageSourceDialog,
               child: Container(
                 width: double.infinity,
                 height: 220,
@@ -513,7 +684,7 @@ class _ScanPageState extends State<ScanPage>
                     "New Scan",
                     "Analyze fabric",
                     Icons.add_a_photo_rounded,
-                    onTap: captureFabricImage,
+                    onTap: _showImageSourceDialog,
                   ),
                   const SizedBox(width: 16),
                   _buildActionCard(
@@ -591,6 +762,29 @@ class _ScanPageState extends State<ScanPage>
                             ],
                           ),
                         ),
+                        if (_classificationResult != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFCCFF00)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFCCFF00)
+                                    .withValues(alpha: 0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              "${(_classificationResult!.confidence * 100).toStringAsFixed(0)}% Match",
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFFCCFF00),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 24),

@@ -6,6 +6,7 @@ import 'views/homepage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'services/fabric_classifier_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    FabricClassifierService().loadModel();
 
     // 1. Background fades in over 1.2s
     _bgController = AnimationController(
