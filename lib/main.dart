@@ -51,25 +51,30 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _bgController;
   late Animation<double> _bgFade;
 
-  // ── Stage 2: title reveal (slide up + fade in)
+  // ── Stage 2: title reveal (slide up + scale + fade in)
   late AnimationController _titleController;
   late Animation<double> _titleFade;
+  late Animation<double> _titleScale;
   late Animation<Offset> _titleSlide;
 
   // ── Stage 3: subtitle + slider appear
   late AnimationController _subController;
   late Animation<double> _subFade;
+  late Animation<Offset> _subSlide;
 
   // ── Stage 4: shimmer sweep across the title
   late AnimationController _shimmerController;
 
-  // ── Stage 5: exit flash on completion
+  // ── Stage 5: pulsating glow for the slider
+  late AnimationController _glowController;
+
+  // ── Stage 6: exit flash on completion
   late AnimationController _exitController;
-  late Animation<double> _exitFlash; // 0→1 white flash
-  late Animation<double> _exitFade; // 1→0 screen fade out
+  late Animation<double> _exitFlash;
+  late Animation<double> _exitFade;
 
   double _dragValue = 0.0;
-  final double _maxWidth = 200.0;
+  final double _maxWidth = 240.0;
   bool _completed = false;
 
   @override
@@ -77,68 +82,84 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     FabricClassifierService().loadModel();
 
-    // 1. Background fades in over 1.2s
+    // 1. Background image (fade)
     _bgController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
     );
-    _bgFade = CurvedAnimation(parent: _bgController, curve: Curves.easeIn);
+    _bgFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _bgController,
+          curve: const Interval(0.0, 0.8, curve: Curves.easeIn)),
+    );
 
-    // 2. Title slides up + fades in (starts a bit after bg)
+    // 2. Title (slide + scale + fade)
     _titleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1400),
     );
-    _titleFade =
-        CurvedAnimation(parent: _titleController, curve: Curves.easeOut);
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.35),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic));
+    _titleFade = CurvedAnimation(
+        parent: _titleController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn));
+    _titleSlide =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+      CurvedAnimation(
+          parent: _titleController,
+          curve: const Interval(0.0, 0.8, curve: Curves.easeOutBack)),
+    );
+    _titleScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _titleController,
+          curve: const Interval(0.0, 0.8, curve: Curves.easeOutBack)),
+    );
 
-    // 3. Subtitle + slider fade in
+    // 3. Subtitle + Slider (fade + slide)
     _subController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 1000),
     );
     _subFade = CurvedAnimation(parent: _subController, curve: Curves.easeIn);
+    _subSlide =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _subController, curve: Curves.easeOutCubic),
+    );
 
-    // 4. Shimmer sweeps continuously
+    // 4. Shimmer effect
     _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 2500),
     )..repeat();
 
-    // 5. Exit: brief white flash then fade out
+    // 5. Pulsating glow for the button
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    // 6. Exit transition
     _exitController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1000),
     );
     _exitFlash = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _exitController,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
-      ),
+          parent: _exitController,
+          curve: const Interval(0.0, 0.3, curve: Curves.easeOut)),
     );
     _exitFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _exitController,
-        curve: const Interval(0.35, 1.0, curve: Curves.easeIn),
-      ),
+          parent: _exitController,
+          curve: const Interval(0.3, 1.0, curve: Curves.easeIn)),
     );
 
     _runSequence();
   }
 
   Future<void> _runSequence() async {
-    // bg fade in
-    await _bgController.forward();
-    // title slide up (with short overlap)
-    await Future.delayed(const Duration(milliseconds: 100));
-    await _titleController.forward();
-    // subtitle + slider ease in
-    await Future.delayed(const Duration(milliseconds: 200));
+    _bgController.forward();
+    await Future.delayed(const Duration(milliseconds: 500));
+    _titleController.forward();
+    await Future.delayed(const Duration(milliseconds: 800));
     _subController.forward();
   }
 
@@ -148,6 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
     _titleController.dispose();
     _subController.dispose();
     _shimmerController.dispose();
+    _glowController.dispose();
     _exitController.dispose();
     super.dispose();
   }
@@ -155,13 +177,13 @@ class _SplashScreenState extends State<SplashScreen>
   void _onDragUpdate(DragUpdateDetails details) {
     if (_completed) return;
     setState(() {
-      _dragValue = (_dragValue + details.delta.dx).clamp(0.0, _maxWidth - 50);
+      _dragValue = (_dragValue + details.delta.dx).clamp(0.0, _maxWidth - 62);
     });
   }
 
   void _onDragEnd(DragEndDetails details) {
     if (_completed) return;
-    if (_dragValue > _maxWidth - 60) {
+    if (_dragValue > _maxWidth - 100) {
       _completeSplash();
     } else {
       setState(() => _dragValue = 0.0);
@@ -171,10 +193,9 @@ class _SplashScreenState extends State<SplashScreen>
   void _completeSplash() async {
     setState(() {
       _completed = true;
-      _dragValue = _maxWidth - 50;
+      _dragValue = _maxWidth - 62;
     });
 
-    // Play exit: white flash → full screen fade to black → navigate
     await _exitController.forward();
 
     if (mounted) {
@@ -187,8 +208,8 @@ class _SplashScreenState extends State<SplashScreen>
         PageTransition(
           type: PageTransitionType.fade,
           child: destination,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOutQuart,
         ),
       );
     }
@@ -201,198 +222,230 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── 1. Background image fades in
+          // ── Background Image
           FadeTransition(
             opacity: _bgFade,
             child: Image.asset(
-              'assets/images/main3ori.jpg',
+              'assets/images/main3orii.jpg',
               fit: BoxFit.cover,
             ),
           ),
 
-          // ── 2. Darkening overlay for contrast
-          FadeTransition(
-            opacity: _bgFade,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.25),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.55),
-                  ],
-                ),
+          // ── Decorative Overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.3),
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.8),
+                ],
               ),
             ),
           ),
 
-          // ── 3. Center: title + subtitle
+          // ── Main Content
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Title: slides up + fades, then shimmer effect
+                // Title reveal
                 SlideTransition(
                   position: _titleSlide,
                   child: FadeTransition(
                     opacity: _titleFade,
-                    child: AnimatedBuilder(
-                      animation: _shimmerController,
-                      builder: (context, child) {
-                        return ShaderMask(
-                          shaderCallback: (bounds) {
-                            // Shimmer sweeps left → right
-                            final shimmerX =
-                                (_shimmerController.value * 2 - 0.5) *
-                                    bounds.width;
-                            return LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: const [
-                                Colors.white,
-                                Colors.white,
-                                Color(0xFFF0FFD6), // soft green highlight
-                                Colors.white,
-                                Colors.white,
-                              ],
-                              stops: [
-                                0.0,
-                                (shimmerX / bounds.width).clamp(0.0, 1.0),
-                                ((shimmerX + 60) / bounds.width)
-                                    .clamp(0.0, 1.0),
-                                ((shimmerX + 120) / bounds.width)
-                                    .clamp(0.0, 1.0),
-                                1.0,
-                              ],
-                            ).createShader(bounds);
-                          },
-                          child: child!,
-                        );
-                      },
-                      child: Text(
-                        'TEXORA',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 82,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -2.5,
+                    child: ScaleTransition(
+                      scale: _titleScale,
+                      child: AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) {
+                          return ShaderMask(
+                            shaderCallback: (bounds) {
+                              final shimmerX =
+                                  (_shimmerController.value * 2.5 - 0.75) *
+                                      bounds.width;
+                              return LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: const [
+                                  Colors.white,
+                                  Colors.white,
+                                  Color(0xFFCCFF00),
+                                  Colors.white,
+                                  Colors.white,
+                                ],
+                                stops: [
+                                  0.0,
+                                  (shimmerX / bounds.width).clamp(0.0, 1.0),
+                                  ((shimmerX + 80) / bounds.width)
+                                      .clamp(0.0, 1.0),
+                                  ((shimmerX + 160) / bounds.width)
+                                      .clamp(0.0, 1.0),
+                                  1.0,
+                                ],
+                              ).createShader(bounds);
+                            },
+                            child: child!,
+                          );
+                        },
+                        child: Text(
+                          'TEXORA',
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 78,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 10),
 
-                // Subtitle: fades in after title
+                // Subtitle Line
                 FadeTransition(
                   opacity: _subFade,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Red accent line left
-                      Container(
-                        width: 22,
-                        height: 1.5,
-                        color: const Color(0xFFCCFF00),
-                        margin: const EdgeInsets.only(right: 10),
-                      ),
-                      Text(
-                        'AI FASHION DESIGN',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 6.5,
+                  child: SlideTransition(
+                    position: _subSlide,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 1,
+                          color: const Color(0xFFCCFF00).withOpacity(0.5),
                         ),
-                      ),
-                      // Red accent line right
-                      Container(
-                        width: 22,
-                        height: 1.5,
-                        color: const Color(0xFFCCFF00),
-                        margin: const EdgeInsets.only(left: 10),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'FUTURE OF FASHION',
+                            style: GoogleFonts.poppins(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 4.5,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 30,
+                          height: 1,
+                          color: const Color(0xFFCCFF00).withOpacity(0.5),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // ── 4. Bottom slider
+          // ── Modernized Slider
           Positioned(
-            bottom: 60,
+            bottom: 80,
             left: 0,
             right: 0,
             child: FadeTransition(
               opacity: _subFade,
-              child: Center(
-                child: _completed
-                    ? const SizedBox()
-                    : Container(
-                        width: _maxWidth,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(35),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25)),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            const Positioned(
-                              right: 22,
-                              child: Text(
-                                'Slide',
-                                style: TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w300,
-                                  letterSpacing: 1.2,
-                                ),
+              child: SlideTransition(
+                position: _subSlide,
+                child: Center(
+                  child: _completed
+                      ? const SizedBox()
+                      : Container(
+                          width: _maxWidth,
+                          height: 72,
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(36),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.1)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black45,
+                                blurRadius: 20,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 10),
                               ),
-                            ),
-                            Positioned(
-                              left: _dragValue + 5,
-                              child: GestureDetector(
-                                onHorizontalDragUpdate: _onDragUpdate,
-                                onHorizontalDragEnd: _onDragEnd,
-                                child: Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFCCFF00),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFCCFF00)
-                                            .withValues(alpha: 0.5),
-                                        blurRadius: 18,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    color: Colors.white,
-                                    size: 28,
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 32),
+                                  child: Text(
+                                    'GET STARTED',
+                                    style: GoogleFonts.outfit(
+                                      color: Colors.white.withOpacity(0.4),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                              Positioned(
+                                left: _dragValue,
+                                child: GestureDetector(
+                                  onHorizontalDragUpdate: _onDragUpdate,
+                                  onHorizontalDragEnd: _onDragEnd,
+                                  child: AnimatedBuilder(
+                                    animation: _glowController,
+                                    builder: (context, child) {
+                                      return Container(
+                                        width: 60,
+                                        height: 60,
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFFCCFF00),
+                                              Color(0xFFAABB00)
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFCCFF00)
+                                                  .withOpacity(0.3 +
+                                                      0.2 *
+                                                          _glowController
+                                                              .value),
+                                              blurRadius: 15 +
+                                                  10 * _glowController.value,
+                                              spreadRadius:
+                                                  2 + 3 * _glowController.value,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: Colors.black87,
+                                          size: 32,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ),
 
-          // ── 5. Exit flash overlay (white → then dark)
+          // ── Exit Flash
           AnimatedBuilder(
             animation: _exitController,
             builder: (context, _) {
@@ -400,13 +453,11 @@ class _SplashScreenState extends State<SplashScreen>
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  // White flash
                   Opacity(
                     opacity: (_exitFlash.value * (1 - _exitFade.value))
                         .clamp(0.0, 1.0),
                     child: Container(color: Colors.white),
                   ),
-                  // Black fade out
                   Opacity(
                     opacity: _exitFade.value,
                     child: Container(color: Colors.black),
