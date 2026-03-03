@@ -169,7 +169,7 @@ class _WelcomePageState extends State<WelcomePage> {
                         height: 4,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? const Color(0xFF9333EA)
+                              ? const Color(0xFFFF5200)
                               : Colors.white24,
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -187,12 +187,12 @@ class _WelcomePageState extends State<WelcomePage> {
                       width: double.infinity,
                       height: 54,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF9333EA),
+                        color: const Color(0xFFFF5200),
                         borderRadius: BorderRadius.circular(40),
                         boxShadow: [
                           BoxShadow(
                             color:
-                                const Color(0xFF9333EA).withValues(alpha: 0.3),
+                                const Color(0xFFFF5200).withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),

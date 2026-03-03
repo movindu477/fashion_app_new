@@ -205,7 +205,7 @@ class _ScanPageState extends State<ScanPage>
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF9333EA), size: 32),
+            Icon(icon, color: const Color(0xFFFF5200), size: 32),
             const SizedBox(height: 12),
             Text(
               title,
@@ -237,13 +237,13 @@ class _ScanPageState extends State<ScanPage>
           AndroidUiSettings(
             toolbarTitle: 'Crop Fabric Texture',
             toolbarColor: const Color(0xFF1A1A1A),
-            toolbarWidgetColor: const Color(0xFF9333EA),
+            toolbarWidgetColor: const Color(0xFFFF5200),
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
             aspectRatioPresets: [
               CropAspectRatioPreset.square,
             ],
-            activeControlsWidgetColor: const Color(0xFF9333EA),
+            activeControlsWidgetColor: const Color(0xFFFF5200),
           ),
           IOSUiSettings(
             title: 'Crop Fabric Texture',
@@ -611,21 +611,21 @@ class _ScanPageState extends State<ScanPage>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+            color: const Color(0xFFFF5200).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: const Color(0xFF9333EA).withValues(alpha: 0.2)),
+                color: const Color(0xFFFF5200).withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.stars_rounded,
-                  color: Color(0xFF9333EA), size: 14),
+                  color: Color(0xFFFF5200), size: 14),
               const SizedBox(width: 4),
               Text(
                 "$credits Credits",
                 style: GoogleFonts.outfit(
-                  color: const Color(0xFF9333EA),
+                  color: const Color(0xFFFF5200),
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -743,7 +743,7 @@ class _ScanPageState extends State<ScanPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Design saved to your library!"),
-            backgroundColor: Color(0xFF9333EA),
+            backgroundColor: Color(0xFFFF5200),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -804,7 +804,7 @@ class _ScanPageState extends State<ScanPage>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.purple.withValues(alpha: 0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       blurRadius: 40,
                       spreadRadius: -10,
                     )
@@ -857,7 +857,7 @@ class _ScanPageState extends State<ScanPage>
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.purple.withValues(alpha: 0.3),
+                                    color: Colors.orange.withValues(alpha: 0.3),
                                     blurRadius: 30,
                                   )
                                 ],
@@ -888,11 +888,11 @@ class _ScanPageState extends State<ScanPage>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 24, vertical: 14),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF9333EA),
+                                    color: const Color(0xFFFF5200),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF9333EA)
+                                        color: const Color(0xFFFF5200)
                                             .withOpacity(0.4),
                                         blurRadius: 15,
                                         offset: const Offset(0, 8),
@@ -1036,7 +1036,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFF9333EA),
+                              selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1082,7 +1082,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFF9333EA),
+                              selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1128,7 +1128,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFF9333EA),
+                              selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1174,7 +1174,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFF9333EA),
+                              selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1221,7 +1221,7 @@ class _ScanPageState extends State<ScanPage>
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                              color: Color(0xFF9333EA), width: 1),
+                              color: Color(0xFFFF5200), width: 1),
                         ),
                       ),
                     ),
@@ -1233,7 +1233,7 @@ class _ScanPageState extends State<ScanPage>
                         onPressed:
                             _isGeneratingDesign ? null : _handleGenerateDesign,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF9333EA),
+                          backgroundColor: const Color(0xFFFF5200),
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
@@ -1286,7 +1286,7 @@ class _ScanPageState extends State<ScanPage>
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                        color: const Color(0xFF9333EA).withValues(alpha: 0.1)),
+                        color: const Color(0xFFFF5200).withValues(alpha: 0.1)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.4),
@@ -1309,14 +1309,14 @@ class _ScanPageState extends State<ScanPage>
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF9333EA)
+                                color: const Color(0xFFFF5200)
                                     .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 _selectedStyle.toUpperCase(),
                                 style: GoogleFonts.outfit(
-                                  color: const Color(0xFF9333EA),
+                                  color: const Color(0xFFFF5200),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                   letterSpacing: 1,
@@ -1326,7 +1326,7 @@ class _ScanPageState extends State<ScanPage>
                             ),
                           ),
                           const Icon(Icons.auto_awesome_rounded,
-                              color: Color(0xFF9333EA), size: 20),
+                              color: Color(0xFFFF5200), size: 20),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -1437,9 +1437,9 @@ class _ScanPageState extends State<ScanPage>
                               icon: const Icon(Icons.refresh_rounded),
                               label: const Text("New Ideas"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF9333EA)
+                                backgroundColor: const Color(0xFFFF5200)
                                     .withValues(alpha: 0.1),
-                                foregroundColor: const Color(0xFF9333EA),
+                                foregroundColor: const Color(0xFFFF5200),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -1609,7 +1609,7 @@ class _ScanPageState extends State<ScanPage>
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF9333EA),
+                                  backgroundColor: const Color(0xFFFF5200),
                                   foregroundColor: Colors.black,
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 16),
@@ -1643,13 +1643,13 @@ class _ScanPageState extends State<ScanPage>
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF9333EA)
+                                  color: const Color(0xFFFF5200)
                                       .withValues(alpha: 0.08),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
                                   Icons.auto_awesome_rounded,
-                                  color: Color(0xFF9333EA),
+                                  color: Color(0xFFFF5200),
                                   size: 40,
                                 ),
                               ),
@@ -1702,7 +1702,7 @@ class _ScanPageState extends State<ScanPage>
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF9333EA),
+                              backgroundColor: const Color(0xFFFF5200),
                               foregroundColor: Colors.black,
                               padding: const EdgeInsets.symmetric(vertical: 18),
                               elevation: 0,
@@ -1763,13 +1763,13 @@ class _ScanPageState extends State<ScanPage>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9333EA).withOpacity(0.1),
+                    color: const Color(0xFFFF5200).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _classificationResult?.label.toUpperCase() ?? "",
                     style: GoogleFonts.outfit(
-                        color: const Color(0xFF9333EA),
+                        color: const Color(0xFFFF5200),
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.5),
@@ -1806,7 +1806,7 @@ class _ScanPageState extends State<ScanPage>
                           value: value,
                           strokeWidth: 16,
                           strokeCap: StrokeCap.round,
-                          color: const Color(0xFF9333EA),
+                          color: const Color(0xFFFF5200),
                         );
                       },
                     ),
@@ -1871,7 +1871,7 @@ class _ScanPageState extends State<ScanPage>
                   child: _buildMetricCard(
                     "Suggested Use",
                     suggestedUse ?? "Universal",
-                    const Color(0xFF9333EA),
+                    const Color(0xFFFF5200),
                   ),
                 ),
               ],
@@ -1991,7 +1991,7 @@ class _ScanPageState extends State<ScanPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: const Color(0xFF9333EA), size: 28),
+              Icon(icon, color: const Color(0xFFFF5200), size: 28),
               const Spacer(),
               Text(title,
                   style: GoogleFonts.poppins(

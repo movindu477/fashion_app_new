@@ -60,7 +60,7 @@ class _AiDesignPageState extends State<AiDesignPage>
         const SnackBar(
           content: Text("Credits status refreshed",
               style: TextStyle(color: Colors.black)),
-          backgroundColor: Color(0xFF9333EA),
+          backgroundColor: Color(0xFFFF5200),
           duration: Duration(seconds: 2),
         ),
       );
@@ -117,7 +117,7 @@ class _AiDesignPageState extends State<AiDesignPage>
       text:
           'Image generation credits have been exhausted. Please top up on the Stability AI website to continue.',
       confirmBtnText: 'Go to Payment',
-      confirmBtnColor: const Color(0xFF9333EA),
+      confirmBtnColor: const Color(0xFFFF5200),
       confirmBtnTextStyle: const TextStyle(
         color: Colors.black,
         fontWeight: FontWeight.bold,
@@ -272,7 +272,7 @@ class _AiDesignPageState extends State<AiDesignPage>
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(32),
         border:
-            Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.1)),
+            Border.all(color: const Color(0xFFFF5200).withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,7 +297,7 @@ class _AiDesignPageState extends State<AiDesignPage>
                   children: [
                     Text("Current Concept",
                         style: GoogleFonts.outfit(
-                            color: const Color(0xFF9333EA),
+                            color: const Color(0xFFFF5200),
                             fontWeight: FontWeight.bold,
                             fontSize: 13)),
                     Text(widget.selectedStyle ?? "Custom Style",
@@ -330,7 +330,7 @@ class _AiDesignPageState extends State<AiDesignPage>
       child: ElevatedButton(
         onPressed: _isGenerating ? null : _generateSketch,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF9333EA),
+          backgroundColor: const Color(0xFFFF5200),
           foregroundColor: Colors.black,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -405,7 +405,7 @@ class _AiDesignPageState extends State<AiDesignPage>
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text("Regenerate"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF9333EA),
+                  backgroundColor: const Color(0xFFFF5200),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
@@ -466,20 +466,20 @@ class _AiDesignPageState extends State<AiDesignPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+        color: const Color(0xFFFF5200).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border:
-            Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.2)),
+            Border.all(color: const Color(0xFFFF5200).withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.bolt_rounded, color: Color(0xFF9333EA), size: 16),
+          const Icon(Icons.bolt_rounded, color: Color(0xFFFF5200), size: 16),
           const SizedBox(width: 6),
           Text(
             "$credits Credits",
             style: GoogleFonts.outfit(
-              color: const Color(0xFF9333EA),
+              color: const Color(0xFFFF5200),
               fontWeight: FontWeight.bold,
               fontSize: 13,
             ),

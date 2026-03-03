@@ -4,11 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fabric_library_page.dart';
 import 'scan_page.dart';
 import 'profile_page.dart';
 import '../widgets/custom_bottom_nav.dart';
+import '../widgets/tutorial_overlay.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -20,11 +22,46 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   late PageController _pageController;
+  bool _showTutorial = false;
+  String _userName = "";
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    _checkTutorial();
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenTutorial = prefs.getBool('has_seen_tutorial') ?? false;
+
+    if (!hasSeenTutorial) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Try to get name from Firestore first
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        setState(() {
+          _userName = doc.data()?['name'] ??
+              user.displayName ??
+              user.email?.split('@')[0] ??
+              "New Designer";
+          _showTutorial = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _completeTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_tutorial', true);
+    setState(() {
+      _showTutorial = false;
+    });
   }
 
   void _onTabTapped(int index) {
@@ -77,6 +114,11 @@ class _HomePageState extends State<HomePage> {
               onTabTapped: _onTabTapped,
             ),
           ),
+          if (_showTutorial)
+            TutorialOverlay(
+              userName: _userName,
+              onComplete: _completeTutorial,
+            ),
         ],
       ),
     );
@@ -164,7 +206,7 @@ class _HomeViewState extends State<HomeView>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: const Color(0xFF9333EA), width: 1.5),
+                          color: const Color(0xFFFF5200), width: 1.5),
                     ),
                     child: CircleAvatar(
                       radius: 20,
@@ -212,13 +254,13 @@ class _HomeViewState extends State<HomeView>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(36),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF9333EA), Color(0xFF7928CA)],
+                  colors: [Color(0xFFFF5200), Color(0xFFE64A19)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF9333EA).withValues(alpha: 0.2),
+                    color: const Color(0xFFFF5200).withValues(alpha: 0.2),
                     blurRadius: 40,
                     spreadRadius: -10,
                   )
@@ -255,7 +297,7 @@ class _HomeViewState extends State<HomeView>
                 _buildQuickAction(
                   "New Scan",
                   Icons.camera_alt_rounded,
-                  const Color(0xFF9333EA),
+                  const Color(0xFFFF5200),
                   () => context
                       .findAncestorStateOfType<_HomePageState>()
                       ?._onTabTapped(2),
@@ -277,7 +319,7 @@ class _HomeViewState extends State<HomeView>
                 _buildQuickAction(
                   "View Profile",
                   Icons.person_rounded,
-                  Colors.purpleAccent,
+                  Colors.orangeAccent,
                   () => context
                       .findAncestorStateOfType<_HomePageState>()
                       ?._onTabTapped(3),
@@ -310,7 +352,7 @@ class _HomeViewState extends State<HomeView>
               child: Row(
                 children: [
                   const Icon(Icons.auto_awesome,
-                      color: Color(0xFF9333EA), size: 22),
+                      color: Color(0xFFFF5200), size: 22),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
@@ -416,14 +458,14 @@ class _HomeViewState extends State<HomeView>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF9333EA)
+                              color: const Color(0xFFFF5200)
                                   .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               "NEXT GEN",
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFF9333EA),
+                                color: const Color(0xFFFF5200),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -490,7 +532,7 @@ class _HomeViewState extends State<HomeView>
             child: Text(
               action,
               style: GoogleFonts.poppins(
-                color: const Color(0xFF9333EA),
+                color: const Color(0xFFFF5200),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),

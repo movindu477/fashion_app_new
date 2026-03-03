@@ -8,6 +8,8 @@ import 'package:quickalert/quickalert.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:page_transition/page_transition.dart';
+import 'reg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,10 +31,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool _isLogin = true; // Toggle state
 
   late AnimationController _fadeController;
-  late AnimationController _bgController;
-  late Animation<Color?> _color1;
-  late Animation<Color?> _color2;
-  late Animation<Color?> _color3;
 
   @override
   void initState() {
@@ -43,51 +41,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 200),
     );
     _fadeController.forward();
-
-    // Smooth animated background
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 5),
-    )..repeat(reverse: true);
-
-    _color1 = TweenSequence<Color?>([
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF0D1B2A), end: const Color(0xFF1A0533)),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF1A0533), end: const Color(0xFF0D1B2A)),
-        weight: 1,
-      ),
-    ]).animate(_bgController);
-
-    _color2 = TweenSequence<Color?>([
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF16213E), end: const Color(0xFF3D0C5E)),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF3D0C5E), end: const Color(0xFF16213E)),
-        weight: 1,
-      ),
-    ]).animate(_bgController);
-
-    _color3 = TweenSequence<Color?>([
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF0F3460), end: const Color(0xFF7B1450)),
-        weight: 1,
-      ),
-      TweenSequenceItem(
-        tween: ColorTween(
-            begin: const Color(0xFF7B1450), end: const Color(0xFF0F3460)),
-        weight: 1,
-      ),
-    ]).animate(_bgController);
   }
 
   Future<void> _checkFirebaseInitialization() async {
@@ -106,17 +59,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _passwordController.dispose();
     _nameController.dispose();
     _fadeController.dispose();
-    _bgController.dispose();
     super.dispose();
   }
 
   void _toggleMode() {
-    _fadeController.reverse().then((_) {
-      setState(() {
-        _isLogin = !_isLogin;
-      });
-      _fadeController.forward();
-    });
+    Navigator.pushReplacement(
+      context,
+      PageTransition(
+        type: PageTransitionType.fade,
+        child: const RegisterPage(),
+        duration: const Duration(milliseconds: 600),
+      ),
+    );
   }
 
   Future<void> _handleSubmit() async {
@@ -225,354 +179,223 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       type: QuickAlertType.error,
       title: 'Failed',
       text: message,
-      confirmBtnColor: const Color(0xFF9333EA),
+      confirmBtnColor: const Color(0xFFFF5200),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. ANIMATED GRADIENT BACKGROUND
-          AnimatedBuilder(
-            animation: _bgController,
-            builder: (context, _) {
-              return Container(
+          // 1. BACKGROUND IMAGE (Top 60%)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/login.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      _color1.value ?? const Color(0xFF0D1B2A),
-                      _color2.value ?? const Color(0xFF16213E),
-                      _color3.value ?? const Color(0xFF0F3460),
+                      Colors.black.withOpacity(0.2),
+                      Colors.transparent,
+                      Colors.black,
                     ],
                   ),
                 ),
-              );
-            },
-          ),
-
-          // Subtle animated blobs for depth
-          AnimatedBuilder(
-            animation: _bgController,
-            builder: (context, _) {
-              return Positioned(
-                top: -80,
-                right: -60,
-                child: Opacity(
-                  opacity: 0.18,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.lerp(
-                        const Color(0xFF9333EA),
-                        const Color(0xFF9B59B6),
-                        _bgController.value,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bgController,
-            builder: (context, _) {
-              return Positioned(
-                bottom: -60,
-                left: -40,
-                child: Opacity(
-                  opacity: 0.14,
-                  child: Container(
-                    width: 250,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color.lerp(
-                        const Color(0xFF3498DB),
-                        const Color(0xFF9333EA),
-                        _bgController.value,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
+              ),
+            ),
           ),
 
           // 2. CONTENT
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  // Header — logo only, no skip
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      height: 52,
-                      width: 52,
-                      fit: BoxFit.cover,
-                    ),
-                  ).animate().fadeIn(duration: 600.ms).scale(),
-                  const SizedBox(height: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Back Button
+                const SizedBox(height: 10),
 
-                  // Animated title — changes with toggle
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.15),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          )),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Align(
-                      key: ValueKey(_isLogin),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        _isLogin ? 'Welcome\nBack.' : 'Start\nCreating.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 42,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          height: 1.05,
-                        ),
-                      ),
+                const Spacer(flex: 2),
+
+                // Greeting Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    _isLogin ? 'Hi!' : 'Sign up',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w900,
                     ),
                   )
                       .animate()
-                      .fadeIn(delay: 200.ms, duration: 600.ms)
-                      .slideY(begin: 0.2, end: 0),
-                  const SizedBox(height: 14),
+                      .fadeIn(duration: 600.ms)
+                      .slideX(begin: -0.2, end: 0),
+                ),
 
-                  // Animated subtitle
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
-                    child: Text(
-                      key: ValueKey('sub_$_isLogin'),
-                      _isLogin
-                          ? 'Your AI fashion studio is waiting.\nDesign, explore, and inspire.'
-                          : 'Join Texora and bring your\nfashion ideas to life with AI.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.white54,
-                        height: 1.6,
+                const SizedBox(height: 20),
+
+                // 3. FORM CARD
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  decoration: BoxDecoration(
+                    color: const Color(
+                        0xFF1E1E1E), // Solid background as per request "don't change boxes and tags"
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
                       ),
-                    ),
-                  ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
-                  const SizedBox(height: 36),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!_isLogin)
+                          _buildModernField(
+                            controller: _nameController,
+                            hint: 'Full Name',
+                            icon: Icons.person_outline_rounded,
+                          ),
+                        if (!_isLogin) const SizedBox(height: 12),
 
-                  // 3. FORM CARD
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(40),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
+                        _buildModernField(
+                          controller: _emailController,
+                          hint: 'Email',
+                          icon: Icons.email_outlined,
+                        ),
+                        const SizedBox(height: 12),
+
+                        _buildModernField(
+                          controller: _passwordController,
+                          hint: 'Password',
+                          icon: Icons.lock_outline_rounded,
+                          isPassword: true,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Main Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _handleSubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF5200),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _loading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.black)
+                                : Text(
+                                    'Continue',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // OR Separator
+                        Row(
+                          children: [
+                            Expanded(
+                                child: Divider(
+                                    color: Colors.white.withOpacity(0.1))),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text('or',
+                                  style: GoogleFonts.poppins(
+                                      color: Colors.white38, fontSize: 12)),
+                            ),
+                            Expanded(
+                                child: Divider(
+                                    color: Colors.white.withOpacity(0.1))),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Social Buttons
+                        _buildSocialButton(
+                          label: 'Continue with Google',
+                          iconUrl:
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                          onTap: _handleGoogleSignIn,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Toggle Login/Register
+                        GestureDetector(
+                          onTap: _toggleMode,
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.poppins(
+                                  color: Colors.white54, fontSize: 13),
+                              children: [
+                                TextSpan(
+                                    text: _isLogin
+                                        ? "Don't have an account? "
+                                        : "Already have an account? "),
+                                TextSpan(
+                                  text: _isLogin ? 'Sign up' : 'Log in',
+                                  style: const TextStyle(
+                                      color: Color(0xFFFF5200),
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        GestureDetector(
+                          onTap: () {},
+                          child: Text(
+                            'Forgot your password?',
+                            style: GoogleFonts.poppins(
+                              color: const Color(0xFFFF5200).withOpacity(0.8),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // TOGGLE SWITCH
-                          Container(
-                            height: 55,
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(25),
-                              border: Border.all(color: Colors.white12),
-                            ),
-                            child: Row(
-                              children: [
-                                _buildToggleButton('Log in', _isLogin),
-                                _buildToggleButton('Sign up', !_isLogin),
-                              ],
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 500.ms)
-                              .slideX(begin: 0.1, end: 0),
-                          const SizedBox(height: 32),
-
-                          // FORM FIELDS
-                          if (!_isLogin)
-                            _buildInputField(
-                              label: 'Full Name',
-                              controller: _nameController,
-                              icon: Icons.person_outline_rounded,
-                              hint: 'John Doe',
-                            )
-                                .animate()
-                                .fadeIn(delay: 600.ms)
-                                .slideX(begin: 0.1, end: 0),
-                          if (!_isLogin) const SizedBox(height: 12),
-                          _buildInputField(
-                            label: 'Email',
-                            controller: _emailController,
-                            icon: Icons.email_outlined,
-                            hint: 'sam.altman@gmail.com',
-                          )
-                              .animate()
-                              .fadeIn(delay: 700.ms)
-                              .slideX(begin: 0.1, end: 0),
-                          const SizedBox(height: 20),
-                          _buildInputField(
-                            label: 'Password',
-                            controller: _passwordController,
-                            icon: Icons.key_outlined,
-                            hint: '••••••••',
-                            isPassword: true,
-                          )
-                              .animate()
-                              .fadeIn(delay: 800.ms)
-                              .slideX(begin: 0.1, end: 0),
-
-                          if (_isLogin)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  'Forgot password?',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.grey[500],
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ).animate().fadeIn(delay: 900.ms),
-
-                          const SizedBox(height: 12),
-
-                          // SUBMIT BUTTON
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: _loading ? null : _handleSubmit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF9333EA),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: _loading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
-                                  : Text(
-                                      _isLogin ? 'Log in' : 'Create Account',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.black,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ).animate().fadeIn(delay: 1.seconds).scale(),
-
-                          const SizedBox(height: 24),
-
-                          // OR DIVIDER
-                          Row(
-                            children: [
-                              Expanded(
-                                  child: Divider(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.1))),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  'OR',
-                                  style: GoogleFonts.poppins(
-                                      color: Colors.white24, fontSize: 12),
-                                ),
-                              ),
-                              Expanded(
-                                  child: Divider(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.1))),
-                            ],
-                          ).animate().fadeIn(delay: 1100.ms),
-
-                          const SizedBox(height: 24),
-
-                          // GOOGLE BUTTON
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: OutlinedButton(
-                              onPressed: _loading ? null : _handleGoogleSignIn,
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.2)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(40),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.network(
-                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-                                    height: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Continue with Google',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 1200.ms)
-                              .slideY(begin: 0.2, end: 0),
-                        ],
-                      ),
-                    ),
                   ),
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ).animate().slideY(begin: 0.1, end: 0, duration: 400.ms),
+
+                const Spacer(),
+              ],
             ),
           ),
         ],
@@ -580,98 +403,80 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildToggleButton(String text, bool active) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: active ? null : _toggleMode,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: active
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : [],
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                color: active ? Colors.black : Colors.white54,
-                fontWeight: active ? FontWeight.bold : FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ),
+  Widget _buildModernField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF2C2C2C),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: isPassword && _obscurePassword,
+        style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(color: Colors.white30, fontSize: 14),
+          prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.white38,
+                    size: 18,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
+        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
       ),
     );
   }
 
-  Widget _buildInputField({
+  Widget _buildSocialButton({
     required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    required String hint,
-    bool isPassword = false,
+    required String iconUrl,
+    required VoidCallback onTap,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white70,
-          ),
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton(
+        onPressed: _loading ? null : onTap,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.white.withOpacity(0.1)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: const Color(0xFF2C2C2C),
         ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-          ),
-          child: TextFormField(
-            controller: controller,
-            obscureText: isPassword && _obscurePassword,
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle:
-                  GoogleFonts.poppins(color: Colors.white30, fontSize: 13),
-              prefixIcon: Icon(icon, color: Colors.white38, size: 18),
-              suffixIcon: isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: Colors.white38,
-                        size: 18,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.network(iconUrl, height: 20),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Required';
-              return null;
-            },
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

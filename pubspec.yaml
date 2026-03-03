@@ -31,6 +31,7 @@ dependencies:
   tflite_flutter: ^0.11.0
   image_cropper: ^8.0.2
   flutter_dotenv: ^5.1.0
+  shared_preferences: ^2.2.3
 
 
 dev_dependencies:
@@ -65,4 +66,12 @@ flutter:
     - assets/images/main6.jpg
     - assets/images/main7.jpg
     - assets/images/main8.jpg
+    - assets/images/login.jpg
+    - assets/images/register.jpg
+    - assets/images/login2.png
+    - assets/images/register2.png
+    - assets/images/hello.jpg
+    - assets/images/hello2.jpg
+    - assets/images/hello3.jpg
+    - assets/images/hello4.jpg
     - assets/models/fabric_classifier_model.tflite

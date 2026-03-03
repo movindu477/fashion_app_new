@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'dart:ui';
 import 'login.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:page_transition/page_transition.dart';
+import 'homepage.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,7 +17,8 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with TickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -33,7 +38,7 @@ class _RegisterPageState extends State<RegisterPage> {
         await Firebase.initializeApp();
       }
     } catch (e) {
-      print('❌ Firebase check error: $e');
+      debugPrint('Firebase check error: $e');
     }
   }
 
@@ -47,7 +52,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _onRegisterPressed() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _loading = true);
 
     try {
@@ -69,7 +73,6 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       if (mounted) {
-        // Show Success Alert
         await QuickAlert.show(
           context: context,
           type: QuickAlertType.success,
@@ -79,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
           confirmBtnColor: const Color(0xFFFF5200),
           barrierDismissible: false,
           onConfirmBtnTap: () {
-            Navigator.of(context).pop(); // Close alert
+            Navigator.of(context).pop();
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const LoginPage()),
               (route) => false,
@@ -88,19 +91,57 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      String msg = "Registration failed";
-      if (e.code == 'email-already-in-use') {
-        msg = "Email already in use";
-      } else if (e.code == 'weak-password') {
-        msg = "Password is too weak";
-      } else if (e.code == 'network-request-failed') {
-        msg = "No Internet Connection";
-      } else {
-        msg = e.message ?? "Registration failed";
-      }
-      _showQuickAlertError(msg);
+      _showQuickAlertError(e.message ?? "Registration failed");
     } catch (e) {
       _showQuickAlertError("An unexpected error occurred: $e");
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _loading = true);
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        // Update user data in Firestore
+        await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+          "name": user.displayName,
+          "email": user.email,
+          "uid": user.uid,
+          "photoUrl": user.photoURL,
+          "lastLogin": FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      if (mounted) {
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Welcome!',
+          text: 'Google Login Successful',
+          autoCloseDuration: const Duration(seconds: 2),
+          showConfirmBtn: false,
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      _showQuickAlertError(e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -119,187 +160,293 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                              )
-                            ]),
-                        child:
-                            const Icon(Icons.arrow_back, color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // content
-                  const Text(
-                    "Register",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Create your account to start your journey!",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black54,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  _buildTextField(
-                    controller: _nameController,
-                    hintText: "Full Name",
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _emailController,
-                    hintText: "Email Address",
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _passwordController,
-                    hintText: "Password",
-                    isPassword: true,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Main Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _onRegisterPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5200),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: _loading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "Sign Up",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Footer
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Already have an account? ",
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (_, __, ___) => const LoginPage(),
-                              transitionsBuilder: (_, a, __, c) =>
-                                  FadeTransition(opacity: a, child: c),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          "Login Now",
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 1. BACKGROUND IMAGE
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/register.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.2),
+                      Colors.transparent,
+                      Colors.black,
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+
+          // 2. CONTENT
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 20, top: 10),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushReplacement(
+                        context,
+                        PageTransition(
+                            type: PageTransitionType.fade,
+                            child: const LoginPage(),
+                            duration: const Duration(milliseconds: 600))),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.chevron_left,
+                          color: Colors.white, size: 28),
+                    ),
+                  ),
+                ),
+
+                const Spacer(flex: 2),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    'Sign up',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideX(begin: -0.2, end: 0),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 3. FORM CARD
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildModernField(
+                          controller: _nameController,
+                          hint: 'Full Name',
+                          icon: Icons.person_outline_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernField(
+                          controller: _emailController,
+                          hint: 'Email',
+                          icon: Icons.email_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernField(
+                          controller: _passwordController,
+                          hint: 'Password',
+                          icon: Icons.lock_outline_rounded,
+                          isPassword: true,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _onRegisterPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF5200),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _loading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.black)
+                                : Text(
+                                    'Create Account',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // OR Separator
+                        Row(
+                          children: [
+                            Expanded(
+                                child: Divider(
+                                    color: Colors.white.withOpacity(0.1))),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text('or',
+                                  style: GoogleFonts.poppins(
+                                      color: Colors.white38, fontSize: 12)),
+                            ),
+                            Expanded(
+                                child: Divider(
+                                    color: Colors.white.withOpacity(0.1))),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Social Buttons
+                        _buildSocialButton(
+                          label: 'Continue with Google',
+                          iconUrl:
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                          onTap: _handleGoogleSignIn,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              PageTransition(
+                                  type: PageTransitionType.fade,
+                                  child: const LoginPage(),
+                                  duration: const Duration(milliseconds: 600)),
+                            );
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.poppins(
+                                  color: Colors.white54, fontSize: 13),
+                              children: [
+                                const TextSpan(
+                                    text: "Already have an account? "),
+                                const TextSpan(
+                                  text: 'Log in',
+                                  style: TextStyle(
+                                      color: Color(0xFFFF5200),
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ).animate().slideY(begin: 0.1, end: 0, duration: 400.ms),
+
+                const Spacer(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildModernField({
     required TextEditingController controller,
-    required String hintText,
+    required String hint,
+    required IconData icon,
     bool isPassword = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF2C2C2C),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            offset: const Offset(0, 5),
-            blurRadius: 15,
-          ),
-        ],
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword && _obscurePassword,
+        style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(color: Colors.black38),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(color: Colors.white30, fontSize: 14),
+          prefixIcon: Icon(icon, color: Colors.white38, size: 20),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     _obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: Colors.black38,
+                    color: Colors.white38,
+                    size: 18,
                   ),
                   onPressed: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                 )
               : null,
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) return 'Required';
-          return null;
-        },
+        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+      ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required String label,
+    required String iconUrl,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton(
+        onPressed: _loading ? null : onTap,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.white.withOpacity(0.1)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: const Color(0xFF2C2C2C),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.network(iconUrl, height: 20),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

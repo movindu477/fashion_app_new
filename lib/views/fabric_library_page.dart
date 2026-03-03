@@ -63,8 +63,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
             ),
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFF9333EA),
-              labelColor: const Color(0xFF9333EA),
+              indicatorColor: const Color(0xFFFF5200),
+              labelColor: const Color(0xFFFF5200),
               unselectedLabelColor: Colors.white38,
               indicatorWeight: 3,
               labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold),
@@ -98,7 +98,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF9333EA)));
+              child: CircularProgressIndicator(color: Color(0xFFFF5200)));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -177,7 +177,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                                     color: Colors.black26,
                                     child: const Center(
                                       child: CircularProgressIndicator(
-                                          color: Color(0xFF9333EA),
+                                          color: Color(0xFFFF5200),
                                           strokeWidth: 2),
                                     )))
                     : (sketchBase64 != null
@@ -370,7 +370,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
               Text(
                 isDesign ? "AI Design Creation" : "Fabric Report",
                 style: GoogleFonts.outfit(
-                    color: const Color(0xFF9333EA),
+                    color: const Color(0xFFFF5200),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     letterSpacing: 1),

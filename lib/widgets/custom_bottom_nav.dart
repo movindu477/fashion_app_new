@@ -87,7 +87,7 @@ class _NavBarItem extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isActive
               ? const LinearGradient(
-                  colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
+                  colors: [Color(0xFFFF5200), Color(0xFFEC4899)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 )

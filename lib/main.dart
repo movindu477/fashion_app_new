@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       title: 'Texora',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
         useMaterial3: true,
       ),
       home: const SplashScreen(),
@@ -259,7 +259,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Container(
                           width: 30,
                           height: 1,
-                          color: const Color(0xFF9333EA).withOpacity(0.5),
+                          color: const Color(0xFFFF5200).withOpacity(0.5),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -276,7 +276,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Container(
                           width: 30,
                           height: 1,
-                          color: const Color(0xFF9333EA).withOpacity(0.5),
+                          color: const Color(0xFFFF5200).withOpacity(0.5),
                         ),
                       ],
                     ),
@@ -342,7 +342,7 @@ class _SplashScreenState extends State<SplashScreen>
                                           )
                                           .shimmer(
                                             duration: 1.5.seconds,
-                                            color: const Color(0xFF9333EA),
+                                            color: const Color(0xFFFF5200),
                                           ),
                                     ),
                                   ),

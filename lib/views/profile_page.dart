@@ -285,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: const Color(0xFF9333EA), width: 2),
+                                      color: const Color(0xFFFF5200), width: 2),
                                 ),
                                 child: CircleAvatar(
                                   radius: 38,
@@ -293,7 +293,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   backgroundImage: imageProvider,
                                   child: _isUploading
                                       ? const CircularProgressIndicator(
-                                          color: Color(0xFF9333EA),
+                                          color: Color(0xFFFF5200),
                                           strokeWidth: 2)
                                       : null,
                                 ),
@@ -524,13 +524,13 @@ class _ProfilePageState extends State<ProfilePage>
     required bool highlighted,
   }) {
     final bgColor =
-        highlighted ? const Color(0xFF9333EA) : const Color(0xFF1A1A1A);
+        highlighted ? const Color(0xFFFF5200) : const Color(0xFF1A1A1A);
     final textColor = highlighted ? Colors.black : Colors.white;
     final subColor = highlighted ? Colors.black54 : Colors.white38;
     final iconBg = highlighted
         ? Colors.black.withValues(alpha: 0.12)
         : Colors.white.withValues(alpha: 0.07);
-    final iconColor = highlighted ? Colors.black87 : const Color(0xFF9333EA);
+    final iconColor = highlighted ? Colors.black87 : const Color(0xFFFF5200);
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -543,7 +543,7 @@ class _ProfilePageState extends State<ProfilePage>
         boxShadow: [
           BoxShadow(
             color: highlighted
-                ? const Color(0xFF9333EA).withValues(alpha: 0.35)
+                ? const Color(0xFFFF5200).withValues(alpha: 0.35)
                 : Colors.black.withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
