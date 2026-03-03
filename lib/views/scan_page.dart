@@ -7,10 +7,13 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:quickalert/quickalert.dart';
 import '../services/color_analysis_service.dart';
 import '../services/gemini_service.dart';
 import '../services/fabric_classifier_service.dart';
+import '../services/stability_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 class ScanPage extends StatefulWidget {
@@ -25,7 +28,7 @@ class ScanPage extends StatefulWidget {
 }
 
 class _ScanPageState extends State<ScanPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final ImagePicker _picker = ImagePicker();
   Uint8List? fabricImageBytes;
   String? fabricImagePath;
@@ -34,6 +37,13 @@ class _ScanPageState extends State<ScanPage>
   bool analysisCompleted = false;
   String? suggestedUse;
   FabricClassificationResult? _classificationResult;
+
+  // Stability AI integration
+  final StabilityService _stabilityService = StabilityService();
+  Uint8List? _generatedSketch;
+  bool _isGeneratingSketch = false;
+  bool _isSavingSketch = false;
+  final GlobalKey _sketchSectionKey = GlobalKey();
 
   // Video Controller for background
   late VideoPlayerController _videoController;
@@ -86,6 +96,7 @@ class _ScanPageState extends State<ScanPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _videoController =
         VideoPlayerController.asset('assets/videos/fabric_bg.mp4')
           ..initialize().then((_) {
@@ -93,6 +104,13 @@ class _ScanPageState extends State<ScanPage>
             _videoController.setLooping(true);
             _videoController.play();
           });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _stabilityService.syncBalanceFromApi();
+    }
   }
 
   @override
@@ -187,7 +205,7 @@ class _ScanPageState extends State<ScanPage>
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFFCCFF00), size: 32),
+            Icon(icon, color: const Color(0xFF9333EA), size: 32),
             const SizedBox(height: 12),
             Text(
               title,
@@ -219,13 +237,13 @@ class _ScanPageState extends State<ScanPage>
           AndroidUiSettings(
             toolbarTitle: 'Crop Fabric Texture',
             toolbarColor: const Color(0xFF1A1A1A),
-            toolbarWidgetColor: const Color(0xFFCCFF00),
+            toolbarWidgetColor: const Color(0xFF9333EA),
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
             aspectRatioPresets: [
               CropAspectRatioPreset.square,
             ],
-            activeControlsWidgetColor: const Color(0xFFCCFF00),
+            activeControlsWidgetColor: const Color(0xFF9333EA),
           ),
           IOSUiSettings(
             title: 'Crop Fabric Texture',
@@ -350,7 +368,11 @@ class _ScanPageState extends State<ScanPage>
         );
       }
     } finally {
-      if (mounted) setState(() => _isAnalyzing = false);
+      if (mounted) {
+        // Artificial delay for smooth animation
+        await Future.delayed(const Duration(milliseconds: 1500));
+        setState(() => _isAnalyzing = false);
+      }
     }
   }
 
@@ -417,11 +439,11 @@ class _ScanPageState extends State<ScanPage>
           );
         }
 
-        // Smooth scroll to the result
+        // Smooth scroll to the AI Sketch section
         Future.delayed(const Duration(milliseconds: 300), () {
-          if (_designResultKey.currentContext != null) {
+          if (_sketchSectionKey.currentContext != null) {
             Scrollable.ensureVisible(
-              _designResultKey.currentContext!,
+              _sketchSectionKey.currentContext!,
               duration: const Duration(seconds: 1),
               curve: Curves.easeInOutQuart,
             );
@@ -446,17 +468,249 @@ class _ScanPageState extends State<ScanPage>
     return text.trim();
   }
 
+  void _showFullScreenImage(Uint8List imageBytes) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black,
+        pageBuilder: (context, animation, _) {
+          return FadeTransition(
+            opacity: animation,
+            child: Scaffold(
+              backgroundColor: Colors.black,
+              body: Stack(
+                children: [
+                  Center(
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: Image.memory(
+                        imageBytes,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  // Close button
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Bottom hint
+                  Positioned(
+                    bottom: 32,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Text(
+                        "Pinch to zoom · Tap × to close",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white38,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _generateSketch() async {
+    if (_generatedDesignConcept == null) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.warning,
+        title: 'No Concept',
+        text: 'Please generate a design concept first!',
+      );
+      return;
+    }
+
+    setState(() => _isGeneratingSketch = true);
+
+    try {
+      final sketch = await _stabilityService.generateFashionSketch(
+        _generatedDesignConcept!,
+        targetGender: _selectedGender,
+        colors: dominantColors,
+      );
+      if (mounted) {
+        setState(() {
+          _generatedSketch = sketch;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        if (e.toString().contains("CREDITS_EXHAUSTED")) {
+          _showTopUpDialog();
+        } else {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Sketch Failed',
+            text: e.toString(),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isGeneratingSketch = false);
+    }
+  }
+
+  void _showTopUpDialog() {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.info,
+      title: 'Top Up Required',
+      text: 'You need more credits to generate a professional sketch.',
+      confirmBtnText: 'Top Up Now',
+      onConfirmBtnTap: () async {
+        final url = Uri.parse('https://stability.ai/generate');
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url);
+        }
+      },
+    );
+  }
+
+  Widget _buildCreditsBadge() {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('app_settings')
+          .doc('system')
+          .snapshots(),
+      builder: (context, snapshot) {
+        int credits = 0;
+        if (snapshot.hasData && snapshot.data!.exists) {
+          credits = snapshot.data!.get('image_credits') ?? 0;
+        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: const Color(0xFF9333EA).withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.stars_rounded,
+                  color: Color(0xFF9333EA), size: 14),
+              const SizedBox(width: 4),
+              Text(
+                "$credits Credits",
+                style: GoogleFonts.outfit(
+                  color: const Color(0xFF9333EA),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveSketchToLibrary() async {
+    if (_generatedSketch == null) return;
+
+    setState(() => _isSavingSketch = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception("User not logged in");
+
+      // 1. Upload sketch image to Firebase Storage
+      final fileName =
+          'sketches/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance.ref().child(fileName);
+      final uploadTask = ref.putData(
+        _generatedSketch!,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // 2. Build color list for Firestore (serialisable Map list)
+      final colorsData = dominantColors
+          .take(5)
+          .map((c) => {'r': c[0], 'g': c[1], 'b': c[2]})
+          .toList();
+
+      // 3. Save metadata to generated_designs (what library reads)
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('generated_designs')
+          .add({
+        'imageUrl': downloadUrl, // storage URL – no size limit
+        'timestamp': FieldValue.serverTimestamp(),
+        'style': _selectedStyle,
+        'gender': _selectedGender,
+        'garment': _selectedGarment,
+        'designConcept': _generatedDesignConcept ?? '',
+        'colors': colorsData,
+      });
+
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Saved!',
+          text: 'Fashion sketch added to your library.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Save Failed',
+          text: e.toString(),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingSketch = false);
+    }
+  }
+
   void _updateAutoPrompt() {
     String colorInfo = "";
     if (dominantColors.isNotEmpty) {
       final hexList =
           dominantColors.take(5).map((c) => ColorAnalysisService.rgbToHex(c));
       colorInfo =
-          "strictly using the following color codes: ${hexList.join(', ')}";
+          "MANDATORY COLOR PALETTE: ${hexList.join(', ')}. You MUST use these exact hex codes in the design description and distribution.";
     }
 
     String autoText =
-        "As a professional fashion designer, generate a highly detailed design concept for a $_selectedStyle $_selectedGarment designed for $_selectedGender, suitable for a $_selectedOccasion occasion, $colorInfo. Focus on how these exact colors are distributed throughout the garment.";
+        "As a professional fashion designer, generate a highly detailed and editorial design concept for a $_selectedStyle $_selectedGarment designed for $_selectedGender, suitable for a $_selectedOccasion occasion. $colorInfo Focus heavily on how these specific colors are applied to different parts of the garment.";
 
     // Always update the prompt to reflect current selections
     setState(() {
@@ -489,7 +743,7 @@ class _ScanPageState extends State<ScanPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Design saved to your library!"),
-            backgroundColor: Color(0xFFCCFF00),
+            backgroundColor: Color(0xFF9333EA),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -527,9 +781,6 @@ class _ScanPageState extends State<ScanPage>
                     letterSpacing: -1,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.auto_awesome_rounded,
-                    color: Color(0xFFCCFF00), size: 24),
               ],
             ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
             Text(
@@ -630,28 +881,49 @@ class _ScanPageState extends State<ScanPage>
                             ),
                             const Spacer(),
                             if (fabricImageBytes != null && !analysisCompleted)
-                              ElevatedButton(
-                                onPressed:
+                              GestureDetector(
+                                onTap:
                                     _isAnalyzing ? null : analyzeFabricLocally,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 12),
+                                      horizontal: 24, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF9333EA),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF9333EA)
+                                            .withOpacity(0.4),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
+                                      )
+                                    ],
+                                  ),
+                                  child: _isAnalyzing
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.black))
+                                      : Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.analytics_rounded,
+                                                color: Colors.black, size: 20),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              "Analyze Now",
+                                              style: GoogleFonts.outfit(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                 ),
-                                child: _isAnalyzing
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.black))
-                                    : const Text("Analyze Now",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                              ),
+                              ).animate().fadeIn().scale(),
                           ],
                         ),
                       ),
@@ -699,153 +971,18 @@ class _ScanPageState extends State<ScanPage>
 
             const SizedBox(height: 30),
 
-            // ANALYSIS RESULTS
-            if (analysisCompleted && dominantColors.isNotEmpty) ...[
+            // ANALYSIS RESULTS (SMOOTH RING ANIMATION)
+            if (_isAnalyzing ||
+                (analysisCompleted && dominantColors.isNotEmpty)) ...[
               const SizedBox(height: 30),
-              _buildSectionHeader("Analysis Result")
+              _buildModernAnalysisProgress()
                   .animate()
-                  .fadeIn()
-                  .slideX(begin: -0.1, end: 0),
-              const SizedBox(height: 16),
-              Container(
-                key: _resultsKey,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(
-                      color: const Color(0xFFCCFF00).withValues(alpha: 0.1)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFCCFF00).withValues(alpha: 0.05),
-                      blurRadius: 30,
-                    )
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            image: DecorationImage(
-                              image: MemoryImage(fabricImageBytes!),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                suggestedUse ?? "Analyzed Fabric",
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              Text(
-                                "AI Textile Intelligence",
-                                style: GoogleFonts.poppins(
-                                  color: const Color(0xFFCCFF00)
-                                      .withValues(alpha: 0.8),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (_classificationResult != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFCCFF00)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFFCCFF00)
-                                    .withValues(alpha: 0.3),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Text(
-                              "${(_classificationResult!.confidence * 100).toStringAsFixed(0)}% Match",
-                              style: GoogleFonts.outfit(
-                                color: const Color(0xFFCCFF00),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceEvenly, // Equal spacing
-                      children: dominantColors.take(5).map((rgb) {
-                        final hex = ColorAnalysisService.rgbToHex(rgb);
-                        final color = ColorAnalysisService.mapToColor(rgb);
-                        return GestureDetector(
-                          onTap: () {
-                            // Copy to clipboard or just show snackbar
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Color $hex selected"),
-                                duration: const Duration(milliseconds: 500),
-                                backgroundColor: color,
-                              ),
-                            );
-                            _updateAutoPrompt(); // Refresh prompt
-                          },
-                          child: Container(
-                            width: 54,
-                            height: 54,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.4),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                )
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                hex.substring(1),
-                                style: TextStyle(
-                                  color: color.computeLuminance() > 0.5
-                                      ? Colors.black87
-                                      : Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ).animate().scale(delay: 400.ms),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              )
-                  .animate()
-                  .fadeIn(duration: 600.ms)
-                  .scale(begin: const Offset(0.98, 0.98)),
+                  .fadeIn(duration: 800.ms)
+                  .slideY(begin: 0.1, end: 0),
+              const SizedBox(height: 30),
+            ],
 
+            if (analysisCompleted && dominantColors.isNotEmpty) ...[
               const SizedBox(height: 40),
 
               // DESIGN ASSISTANT
@@ -899,7 +1036,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFFCCFF00),
+                              selectedColor: const Color(0xFF9333EA),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -945,7 +1082,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFFCCFF00),
+                              selectedColor: const Color(0xFF9333EA),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -991,7 +1128,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFFCCFF00),
+                              selectedColor: const Color(0xFF9333EA),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1037,7 +1174,7 @@ class _ScanPageState extends State<ScanPage>
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
-                              selectedColor: const Color(0xFFCCFF00),
+                              selectedColor: const Color(0xFF9333EA),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
@@ -1084,7 +1221,7 @@ class _ScanPageState extends State<ScanPage>
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                              color: Color(0xFFCCFF00), width: 1),
+                              color: Color(0xFF9333EA), width: 1),
                         ),
                       ),
                     ),
@@ -1096,7 +1233,7 @@ class _ScanPageState extends State<ScanPage>
                         onPressed:
                             _isGeneratingDesign ? null : _handleGenerateDesign,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFCCFF00),
+                          backgroundColor: const Color(0xFF9333EA),
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
@@ -1149,7 +1286,7 @@ class _ScanPageState extends State<ScanPage>
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                        color: const Color(0xFFCCFF00).withValues(alpha: 0.1)),
+                        color: const Color(0xFF9333EA).withValues(alpha: 0.1)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.4),
@@ -1165,27 +1302,31 @@ class _ScanPageState extends State<ScanPage>
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFCCFF00)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              _selectedStyle.toUpperCase(),
-                              style: GoogleFonts.outfit(
-                                color: const Color(0xFFCCFF00),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                letterSpacing: 1,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF9333EA)
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                _selectedStyle.toUpperCase(),
+                                style: GoogleFonts.outfit(
+                                  color: const Color(0xFF9333EA),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  letterSpacing: 1,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),
                           const Icon(Icons.auto_awesome_rounded,
-                              color: Color(0xFFCCFF00), size: 20),
+                              color: Color(0xFF9333EA), size: 20),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -1207,6 +1348,59 @@ class _ScanPageState extends State<ScanPage>
                           fontSize: 14,
                           height: 1.6,
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Added: Used Colors for reference
+                      Text(
+                        "Captured Colors Used",
+                        style: GoogleFonts.outfit(
+                          color: Colors.white54,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: dominantColors.take(5).map((rgb) {
+                          final hex = ColorAnalysisService.rgbToHex(rgb);
+                          final color = ColorAnalysisService.mapToColor(rgb);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white24, width: 0.5),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  hex,
+                                  style: GoogleFonts.sourceCodePro(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                       const SizedBox(height: 30),
                       // Action buttons
@@ -1231,62 +1425,6 @@ class _ScanPageState extends State<ScanPage>
                         ],
                       ),
                       const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // Triggering navigation via HomePage's _onTabTapped
-                            // Since we don't have direct access here, we use the callback
-                            // The callback already updated the shared state.
-                            // We just need to tell the parent to switch tabs.
-
-                            // For simplicity, we can use the snacker as a confirmation then switch
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Switching to AI Sketch...",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                backgroundColor: Color(0xFFCCFF00),
-                                duration: Duration(milliseconds: 800),
-                              ),
-                            );
-
-                            // Find the HomePage state to switch tabs
-                            dynamic parent =
-                                context.findAncestorStateOfType<State>();
-                            while (parent != null &&
-                                parent.runtimeType.toString() !=
-                                    "_HomePageState") {
-                              parent = parent.context
-                                  .findAncestorStateOfType<State>();
-                            }
-
-                            if (parent != null) {
-                              parent._onTabTapped(3);
-                            }
-                          },
-                          icon: const Icon(Icons.auto_awesome_rounded),
-                          label: const Text(
-                            "Generate Professional Sketch",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFCCFF00),
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -1294,13 +1432,14 @@ class _ScanPageState extends State<ScanPage>
                               onPressed: () => setState(() {
                                 _hasResult = false;
                                 _generatedDesignConcept = null;
+                                _generatedSketch = null;
                               }),
                               icon: const Icon(Icons.refresh_rounded),
                               label: const Text("New Ideas"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFCCFF00)
+                                backgroundColor: const Color(0xFF9333EA)
                                     .withValues(alpha: 0.1),
-                                foregroundColor: const Color(0xFFCCFF00),
+                                foregroundColor: const Color(0xFF9333EA),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -1310,6 +1449,269 @@ class _ScanPageState extends State<ScanPage>
                           ),
                         ],
                       ),
+                      const SizedBox(height: 40),
+
+                      // ── AI SKETCH SECTION ──
+                      SizedBox(key: _sketchSectionKey, height: 0),
+                      const SizedBox(height: 8),
+                      // Header row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "AI Fashion Sketch",
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              Text(
+                                "Powered by Stability AI",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white38,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                          _buildCreditsBadge(),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Image area
+                      if (_generatedSketch != null) ...[
+                        GestureDetector(
+                          onTap: () => _showFullScreenImage(_generatedSketch!),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Stack(
+                              children: [
+                                Image.memory(
+                                  _generatedSketch!,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                                // Subtle bottom gradient
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withValues(alpha: 0.6),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // Tap hint badge
+                                Positioned(
+                                  bottom: 16,
+                                  right: 16,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.fullscreen_rounded,
+                                            color: Colors.white70, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "Tap to expand",
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white70,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                            .animate()
+                            .fadeIn(duration: 600.ms)
+                            .scale(begin: const Offset(0.97, 0.97)),
+                        const SizedBox(height: 16),
+                        // Action buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _isGeneratingSketch
+                                    ? null
+                                    : _generateSketch,
+                                icon: _isGeneratingSketch
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.black,
+                                        ),
+                                      )
+                                    : const Icon(Icons.refresh_rounded,
+                                        size: 18),
+                                label: Text(
+                                  _isGeneratingSketch
+                                      ? "Generating..."
+                                      : "Regenerate",
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.1),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _isSavingSketch
+                                    ? null
+                                    : _saveSketchToLibrary,
+                                icon: const Icon(Icons.bookmark_add_rounded,
+                                    size: 18),
+                                label: Text(
+                                  "Save to Library",
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF9333EA),
+                                  foregroundColor: Colors.black,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        // Premium placeholder
+                        Container(
+                          width: double.infinity,
+                          height: 300,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                const Color(0xFF1A1A1A),
+                                Colors.black.withValues(alpha: 0.8),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF9333EA)
+                                      .withValues(alpha: 0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: Color(0xFF9333EA),
+                                  size: 40,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                "Your Sketch Awaits",
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Tap below to generate a\nprofessional fashion illustration",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white38,
+                                  fontSize: 13,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed:
+                                _isGeneratingSketch ? null : _generateSketch,
+                            icon: _isGeneratingSketch
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : const Icon(Icons.auto_awesome_rounded,
+                                    size: 20),
+                            label: Text(
+                              _isGeneratingSketch
+                                  ? "Generating Sketch..."
+                                  : "Create Fashion Sketch",
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF9333EA),
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18)),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.2, end: 0),
@@ -1319,6 +1721,249 @@ class _ScanPageState extends State<ScanPage>
             const SizedBox(height: 120),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildModernAnalysisProgress() {
+    double score = _classificationResult?.score ?? 0.0;
+    // Score < 0.5 is fabric
+    double fabricConfidence = (1.0 - score).clamp(0.0, 1.0);
+    double confidencePercent = (_classificationResult?.confidence ?? 0.0) * 100;
+
+    return Container(
+      key: _resultsKey,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _isAnalyzing ? "Analyzing material..." : "Material Identified",
+                style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
+              if (analysisCompleted)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF9333EA).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _classificationResult?.label.toUpperCase() ?? "",
+                    style: GoogleFonts.outfit(
+                        color: const Color(0xFF9333EA),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Center(
+            child: SizedBox(
+              width: 190,
+              height: 190,
+              child: Stack(
+                children: [
+                  // Outer subtle ring
+                  Positioned.fill(
+                    child: CircularProgressIndicator(
+                      value: 1,
+                      strokeWidth: 16,
+                      color: Colors.white.withOpacity(0.03),
+                    ),
+                  ),
+                  // The main progress ring
+                  Positioned.fill(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: _isAnalyzing ? 0.7 : fabricConfidence,
+                      ),
+                      duration: Duration(seconds: _isAnalyzing ? 4 : 2),
+                      curve: Curves.easeInOutCubic,
+                      builder: (context, value, child) {
+                        return CircularProgressIndicator(
+                          value: value,
+                          strokeWidth: 16,
+                          strokeCap: StrokeCap.round,
+                          color: const Color(0xFF9333EA),
+                        );
+                      },
+                    ),
+                  ),
+                  // Shimmering effect overlay
+                  if (_isAnalyzing)
+                    const Positioned.fill(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 16,
+                        strokeCap: StrokeCap.round,
+                        color: Colors.white24,
+                      ),
+                    )
+                        .animate(onPlay: (c) => c.repeat())
+                        .shimmer(duration: 1.seconds),
+                  // Center content
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _isAnalyzing
+                              ? "..."
+                              : "${confidencePercent.toStringAsFixed(1)}%",
+                          style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1),
+                        ),
+                        Text(
+                          _isAnalyzing ? "Processing" : "Confidence",
+                          style: GoogleFonts.poppins(
+                              color: Colors.white38,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          if (analysisCompleted) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    "Primary Hue",
+                    dominantColors.isNotEmpty
+                        ? ColorAnalysisService.rgbToHex(dominantColors[0])
+                        : "#---",
+                    dominantColors.isNotEmpty
+                        ? ColorAnalysisService.mapToColor(dominantColors[0])
+                        : Colors.white10,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildMetricCard(
+                    "Suggested Use",
+                    suggestedUse ?? "Universal",
+                    const Color(0xFF9333EA),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Re-adding the color palette here for accessibility
+            Text(
+              "Detected Palette",
+              style: GoogleFonts.outfit(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: dominantColors.take(5).map((rgb) {
+                final color = ColorAnalysisService.mapToColor(rgb);
+                final hex = ColorAnalysisService.rgbToHex(rgb);
+                return Column(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hex,
+                      style: GoogleFonts.sourceCodePro(
+                        color: Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                  width: 8,
+                  height: 8,
+                  decoration:
+                      BoxDecoration(color: color, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Text(label,
+                  style:
+                      GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
@@ -1346,7 +1991,7 @@ class _ScanPageState extends State<ScanPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: const Color(0xFFCCFF00), size: 28),
+              Icon(icon, color: const Color(0xFF9333EA), size: 28),
               const Spacer(),
               Text(title,
                   style: GoogleFonts.poppins(

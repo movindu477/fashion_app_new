@@ -225,7 +225,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       type: QuickAlertType.error,
       title: 'Failed',
       text: message,
-      confirmBtnColor: const Color(0xFFCCFF00),
+      confirmBtnColor: const Color(0xFF9333EA),
     );
   }
 
@@ -269,7 +269,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Color.lerp(
-                        const Color(0xFFCCFF00),
+                        const Color(0xFF9333EA),
                         const Color(0xFF9B59B6),
                         _bgController.value,
                       ),
@@ -294,7 +294,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       color: Color.lerp(
                         const Color(0xFF3498DB),
-                        const Color(0xFFCCFF00),
+                        const Color(0xFF9333EA),
                         _bgController.value,
                       ),
                     ),
@@ -482,7 +482,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             child: ElevatedButton(
                               onPressed: _loading ? null : _handleSubmit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFCCFF00),
+                                backgroundColor: const Color(0xFF9333EA),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(40),

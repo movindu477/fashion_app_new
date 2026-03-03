@@ -50,16 +50,10 @@ class CustomBottomNavBar extends StatelessWidget {
               onTap: () => onTabTapped(2),
             ),
             _NavBarItem(
-              icon: Icons.brush_rounded,
-              label: 'AI Sketch',
-              isActive: currentIndex == 3,
-              onTap: () => onTabTapped(3),
-            ),
-            _NavBarItem(
               icon: Icons.person_3_outlined,
               label: 'Profile',
-              isActive: currentIndex == 4,
-              onTap: () => onTabTapped(4),
+              isActive: currentIndex == 3,
+              onTap: () => onTabTapped(3),
             ),
           ],
         ),
@@ -91,7 +85,14 @@ class _NavBarItem extends StatelessWidget {
         padding:
             EdgeInsets.symmetric(horizontal: isActive ? 16 : 8, vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFCCFF00) : Colors.transparent,
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Color(0xFF9333EA), Color(0xFFEC4899)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              : null,
+          color: isActive ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
@@ -99,7 +100,7 @@ class _NavBarItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? Colors.black : Colors.white54,
+              color: isActive ? Colors.white : Colors.white54,
               size: 26,
             ),
             if (isActive) ...[
@@ -108,7 +109,7 @@ class _NavBarItem extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),

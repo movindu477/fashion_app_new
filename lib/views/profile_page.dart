@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'login.dart';
 import 'edit_profile_page.dart';
@@ -24,6 +26,8 @@ class _ProfilePageState extends State<ProfilePage>
   UserModel? _userModel;
   Uint8List? _localImageBytes;
   bool _isUploading = false;
+  int _sketchCount = 0;
+  int _scanCount = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -40,6 +44,32 @@ class _ProfilePageState extends State<ProfilePage>
       setState(() {
         _userModel = userModel;
       });
+    }
+    // Also fetch real stats from Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final sketches = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('sketches')
+            .count()
+            .get();
+        final scans = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('scanned_fabrics')
+            .count()
+            .get();
+        if (mounted) {
+          setState(() {
+            _sketchCount = sketches.count ?? 0;
+            _scanCount = scans.count ?? 0;
+          });
+        }
+      } catch (e) {
+        debugPrint('Stats fetch error: $e');
+      }
     }
   }
 
@@ -128,10 +158,12 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final String displayName = _userModel?.name ??
-        _userController.currentUser?.displayName ??
-        _userController.currentUser?.email?.split('@')[0] ??
-        "Designer";
+    // Robust display name: Firestore > Firebase Auth displayName > email prefix > never 'Designer'
+    final String displayName = _userModel?.name?.isNotEmpty == true
+        ? _userModel!.name!
+        : (_userController.currentUser?.displayName?.isNotEmpty == true
+            ? _userController.currentUser!.displayName!
+            : (_userController.currentUser?.email?.split('@')[0] ?? 'User'));
 
     final photoUrl =
         _userModel?.photoUrl ?? _userController.currentUser?.photoURL;
@@ -253,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                      color: const Color(0xFFCCFF00), width: 2),
+                                      color: const Color(0xFF9333EA), width: 2),
                                 ),
                                 child: CircleAvatar(
                                   radius: 38,
@@ -261,7 +293,7 @@ class _ProfilePageState extends State<ProfilePage>
                                   backgroundImage: imageProvider,
                                   child: _isUploading
                                       ? const CircularProgressIndicator(
-                                          color: Color(0xFFCCFF00),
+                                          color: Color(0xFF9333EA),
                                           strokeWidth: 2)
                                       : null,
                                 ),
@@ -320,22 +352,22 @@ class _ProfilePageState extends State<ProfilePage>
                       Row(
                         children: [
                           Expanded(
-                            child: _buildProgressCard(
-                              _userModel?.name ?? displayName,
-                              "Your Name",
-                              100,
-                              const Color(0xFFCCFF00),
+                            child: _buildLiveStatCard(
+                              icon: Icons.auto_awesome_rounded,
+                              count: _sketchCount,
+                              label: "AI Sketches",
+                              sublabel: "Generated",
+                              highlighted: true,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: _buildProgressColorCard(
-                              _userController.currentUser?.email
-                                      ?.split('@')[0] ??
-                                  "Designer",
-                              "Username",
-                              75,
-                              const Color(0xFFCCFF00),
+                            child: _buildLiveStatCard(
+                              icon: Icons.document_scanner_rounded,
+                              count: _scanCount,
+                              label: "Fabric Scans",
+                              sublabel: "Analyzed",
+                              highlighted: false,
                             ),
                           ),
                         ],
@@ -484,16 +516,35 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildProgressCard(
-      String title, String level, int progress, Color color) {
+  Widget _buildLiveStatCard({
+    required IconData icon,
+    required int count,
+    required String label,
+    required String sublabel,
+    required bool highlighted,
+  }) {
+    final bgColor =
+        highlighted ? const Color(0xFF9333EA) : const Color(0xFF1A1A1A);
+    final textColor = highlighted ? Colors.black : Colors.white;
+    final subColor = highlighted ? Colors.black54 : Colors.white38;
+    final iconBg = highlighted
+        ? Colors.black.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.07);
+    final iconColor = highlighted ? Colors.black87 : const Color(0xFF9333EA);
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: color,
+        color: bgColor,
         borderRadius: BorderRadius.circular(24),
+        border: highlighted
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.07)),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.4),
+            color: highlighted
+                ? const Color(0xFF9333EA).withValues(alpha: 0.35)
+                : Colors.black.withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
           )
@@ -502,100 +553,42 @@ class _ProfilePageState extends State<ProfilePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                progress.toString(),
-                style: GoogleFonts.outfit(
-                    color: Colors.black,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold),
-              ),
-              _buildMiniProgressBars(progress, Colors.black26),
-            ],
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
-            "Keep it up!",
+            count.toString(),
+            style: GoogleFonts.outfit(
+              color: textColor,
+              fontSize: 40,
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              color: textColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            sublabel,
             style: GoogleFonts.poppins(
-                color: Colors.black54,
-                fontSize: 11,
-                fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-                color: Colors.black, fontSize: 22, fontWeight: FontWeight.w800),
+              color: subColor,
+              fontSize: 11,
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildProgressColorCard(
-      String title, String level, int progress, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                progress.toString(),
-                style: GoogleFonts.outfit(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold),
-              ),
-              _buildMiniProgressBars(progress, color),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Weekly Goal",
-            style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: GoogleFonts.outfit(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniProgressBars(int progress, Color color) {
-    return Row(
-      children: List.generate(5, (index) {
-        bool active = (index + 1) * 20 <= progress;
-        return Container(
-          width: 4,
-          height: 12,
-          margin: const EdgeInsets.only(left: 2),
-          decoration: BoxDecoration(
-            color: active ? color : color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        );
-      }),
     );
   }
 

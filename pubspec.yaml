@@ -30,6 +30,7 @@ dependencies:
   in_app_purchase: ^3.2.0
   tflite_flutter: ^0.11.0
   image_cropper: ^8.0.2
+  flutter_dotenv: ^5.1.0
 
 
 dev_dependencies:
@@ -56,11 +57,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/home1.mp4
+    - .env
     - assets/images/logo.png
-    - assets/images/main3.jpg
     - assets/images/main3ori.jpg
-    - assets/images/main3orii.jpg
     - assets/images/main4.jpg
     - assets/images/main5.jpg
     - assets/images/main6.jpg

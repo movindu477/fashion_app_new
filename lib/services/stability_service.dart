@@ -3,10 +3,10 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class StabilityService {
-  static const String _fallbackApiKey =
-      "sk-CG6fRll0j7vkphcJAgWoeDoDeGjZXa1LZ4a5gqCLBLk89g7F";
+  static String get _fallbackApiKey => dotenv.env['STABILITY_API_KEY'] ?? "";
   static const String _endpoint =
       "https://api.stability.ai/v2beta/stable-image/generate/sd3";
   static const String _balanceEndpoint =

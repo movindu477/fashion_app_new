@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GeminiService {
-  // Provided Gemini API Key
-  static const String _apiKey = "AIzaSyA13cMFlOXIOdbzbmJUTX731oBmA-InuS0";
+  static String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? "";
   static const String _baseUrl =
-      "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
 
   Future<String?> generateDesign({
     required List<Map<String, int>> colors,
@@ -16,6 +16,8 @@ class GeminiService {
     String? garmentType,
   }) async {
     try {
+      // Add a small delay to respect free tier rate limits
+      await Future.delayed(const Duration(seconds: 2));
       final colorHexes = colors.map((c) {
         final r = c['r']!.toRadixString(16).padLeft(2, '0');
         final g = c['g']!.toRadixString(16).padLeft(2, '0');
@@ -39,19 +41,19 @@ Additional Instructions: ${userPrompt.isEmpty ? 'N/A' : userPrompt}
 
 STRICT REQUIREMENT:
 - You MUST explicitly use ONLY these EXACT HEX COLORS from the Dominant Color Palette: $colorHexes.
-- Do NOT use generic color names like 'blue' or 'red' alone; always refer to them by their specific hex codes in your DESIGN DESCRIPTION.
-- The DESIGN DESCRIPTION must describe how these specific colors are applied to different parts of the garment in detail.
-- Ensure the description is extremely vivid so a text-to-image AI can accurately visualize these EXACT colors.
+- In your DESIGN DESCRIPTION, you MUST refer to these colors by their HEX CODES (e.g., instead of 'red', say 'the #FF0000 crimson').
+- The DESIGN DESCRIPTION must explain EXACTLY which parts of the garment use which hex code.
+- If you fail to include the hex codes $colorHexes in your response, you have failed the task.
 
 STRUCTURED OUTPUT:
 GARMENT: [Clothing Type]
 MATERIALS: [Fabric Recommendation]
 FEATURES: [Silhouette & Details]
-PALETTE: [Exact Color Distribution using ONLY $colorHexes]
+PALETTE: [Exact Color Distribution using ONLY the hex codes $colorHexes]
 STYLING: [Occasion & Pairing]
 
 DESIGN DESCRIPTION:
-[Detailed description of the design incorporating the MANDATORY hex colors $colorHexes]
+[Very detailed description of the design, explicitly referencing the hex colors $colorHexes at least once for each major component]
 """;
 
       print("🚀 [Gemini] Status: Requesting designer concept...");

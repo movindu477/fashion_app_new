@@ -149,10 +149,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 child: ElevatedButton(
                   onPressed: _isUpdating ? null : _updateProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFCCFF00),
+                    backgroundColor: const Color(0xFF9333EA),
                     foregroundColor: Colors.black,
                     elevation: 8,
-                    shadowColor: const Color(0xFFCCFF00).withValues(alpha: 0.3),
+                    shadowColor: const Color(0xFF9333EA).withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                   ),
@@ -202,7 +202,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon,
-                color: const Color(0xFFCCFF00).withValues(alpha: 0.7),
+                color: const Color(0xFF9333EA).withValues(alpha: 0.7),
                 size: 22),
             filled: true,
             fillColor: const Color(0xFF1A1A1A),
@@ -219,7 +219,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide:
-                  const BorderSide(color: Color(0xFFCCFF00), width: 1.5),
+                  const BorderSide(color: Color(0xFF9333EA), width: 1.5),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

@@ -7,10 +7,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'fabric_library_page.dart';
 import 'scan_page.dart';
-import 'ai_design_page.dart';
 import 'profile_page.dart';
 import '../widgets/custom_bottom_nav.dart';
-import 'dart:typed_data';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -22,14 +20,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   late PageController _pageController;
-
-  // Shared state for AI Design
-  String? _currentConcept;
-  List<Map<String, int>>? _currentColors;
-  Uint8List? _currentFabricImage;
-  String? _currentStyle;
-  String? _currentGender;
-  String? _currentGarment;
 
   @override
   void initState() {
@@ -70,23 +60,8 @@ class _HomePageState extends State<HomePage> {
                 onHistoryTap: () => _onTabTapped(1),
                 onConceptGenerated:
                     (concept, colors, image, style, gender, garment) {
-                  setState(() {
-                    _currentConcept = concept;
-                    _currentColors = colors;
-                    _currentFabricImage = image;
-                    _currentStyle = style;
-                    _currentGender = gender;
-                    _currentGarment = garment;
-                  });
+                  // State is now internal to ScanPage
                 },
-              ),
-              AiDesignPage(
-                designConcept: _currentConcept,
-                dominantColors: _currentColors,
-                fabricImage: _currentFabricImage,
-                selectedStyle: _currentStyle,
-                selectedGender: _currentGender,
-                selectedGarment: _currentGarment,
               ),
               ProfilePage(
                 onBack: () => _onTabTapped(0),
@@ -189,7 +164,7 @@ class _HomeViewState extends State<HomeView>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: const Color(0xFFCCFF00), width: 1.5),
+                          color: const Color(0xFF9333EA), width: 1.5),
                     ),
                     child: CircleAvatar(
                       radius: 20,
@@ -237,13 +212,13 @@ class _HomeViewState extends State<HomeView>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(36),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF2C1A3A), Color(0xFF1A1A1A)],
+                  colors: [Color(0xFF9333EA), Color(0xFF7928CA)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.purple.withValues(alpha: 0.1),
+                    color: const Color(0xFF9333EA).withValues(alpha: 0.2),
                     blurRadius: 40,
                     spreadRadius: -10,
                   )
@@ -253,9 +228,9 @@ class _HomeViewState extends State<HomeView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Discover Your\nUnique Style",
+                    "Design Your\nFuture Today",
                     style: GoogleFonts.outfit(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
                       height: 1.0,
@@ -263,13 +238,66 @@ class _HomeViewState extends State<HomeView>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    "Switch to the Scan tab to start analyzing fabrics and generating AI designs.",
+                    "Transform any fabric into a professional fashion silhouette with our AI engine.",
                     style: GoogleFonts.poppins(
-                        color: Colors.white54, fontSize: 13),
+                        color: Colors.black87,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
             ).animate().fadeIn().scale(),
+            const SizedBox(height: 35),
+            _buildSectionHeader("Quick Actions", null),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildQuickAction(
+                  "New Scan",
+                  Icons.camera_alt_rounded,
+                  const Color(0xFF9333EA),
+                  () => context
+                      .findAncestorStateOfType<_HomePageState>()
+                      ?._onTabTapped(2),
+                ),
+                const SizedBox(width: 16),
+                _buildQuickAction(
+                  "My Library",
+                  Icons.collections_bookmark_rounded,
+                  Colors.blueAccent,
+                  () => context
+                      .findAncestorStateOfType<_HomePageState>()
+                      ?._onTabTapped(1),
+                ),
+              ],
+            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildQuickAction(
+                  "View Profile",
+                  Icons.person_rounded,
+                  Colors.purpleAccent,
+                  () => context
+                      .findAncestorStateOfType<_HomePageState>()
+                      ?._onTabTapped(3),
+                ),
+                const SizedBox(width: 16),
+                _buildQuickAction(
+                  "Help Center",
+                  Icons.help_outline_rounded,
+                  Colors.orangeAccent,
+                  () {},
+                ),
+              ],
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
+            const SizedBox(height: 40),
+            _buildSectionHeader("Recent Analysis", "View All",
+                onActionTap: () => context
+                    .findAncestorStateOfType<_HomePageState>()
+                    ?._onTabTapped(1)),
+            const SizedBox(height: 16),
+            _buildRecentScansList(),
             const SizedBox(height: 30),
             Container(
               height: 60,
@@ -282,7 +310,7 @@ class _HomeViewState extends State<HomeView>
               child: Row(
                 children: [
                   const Icon(Icons.auto_awesome,
-                      color: Color(0xFFCCFF00), size: 22),
+                      color: Color(0xFF9333EA), size: 22),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
@@ -388,14 +416,14 @@ class _HomeViewState extends State<HomeView>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFCCFF00)
+                              color: const Color(0xFF9333EA)
                                   .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               "NEXT GEN",
                               style: GoogleFonts.outfit(
-                                color: const Color(0xFFCCFF00),
+                                color: const Color(0xFF9333EA),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -462,13 +490,152 @@ class _HomeViewState extends State<HomeView>
             child: Text(
               action,
               style: GoogleFonts.poppins(
-                color: const Color(0xFFCCFF00),
+                color: const Color(0xFF9333EA),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildQuickAction(
+      String title, IconData icon, Color color, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentScansList() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('history')
+          .orderBy('timestamp', descending: true)
+          .limit(3)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.history_toggle_off_rounded,
+                    color: Colors.white24, size: 40),
+                const SizedBox(height: 12),
+                Text(
+                  "No recent scans yet",
+                  style:
+                      GoogleFonts.poppins(color: Colors.white38, fontSize: 13),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final imageUrl = data['imageUrl'] ?? '';
+            final fabricType = data['fabricType'] ?? 'Unknown';
+            final timestamp = data['timestamp'] as Timestamp?;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(imageUrl, fit: BoxFit.cover)
+                          : Container(color: Colors.black26),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fabricType,
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          timestamp != null
+                              ? "${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}"
+                              : "Just now",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white38,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: Colors.white24),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

@@ -6,10 +6,9 @@ import 'dart:io';
 import 'package:quickalert/quickalert.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 
 class FabricLibraryPage extends StatefulWidget {
-  const FabricLibraryPage({Key? key}) : super(key: key);
+  const FabricLibraryPage({super.key});
 
   @override
   State<FabricLibraryPage> createState() => _FabricLibraryPageState();
@@ -64,8 +63,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
             ),
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFFCCFF00),
-              labelColor: const Color(0xFFCCFF00),
+              indicatorColor: const Color(0xFF9333EA),
+              labelColor: const Color(0xFF9333EA),
               unselectedLabelColor: Colors.white38,
               indicatorWeight: 3,
               labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold),
@@ -99,7 +98,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFCCFF00)));
+              child: CircularProgressIndicator(color: Color(0xFF9333EA)));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -144,9 +143,10 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
   Widget _buildItemCard(BuildContext context, Map<String, dynamic> data,
       String docId, String collection) {
     final isDesign = collection == 'generated_designs';
-    final imageBase64 = data['imageBase64'] as String?; // Old field
-    final sketchBase64 = data['sketchBase64'] as String?; // New field
-    final fabricBase64 = data['fabricBase64'] as String?; // New reference field
+    final imageUrl = data['imageUrl'] as String?; // Firebase Storage URL (new)
+    final imageBase64 = data['imageBase64'] as String?; // legacy
+    final sketchBase64 = data['sketchBase64'] as String?; // legacy
+    final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
     final title = isDesign
         ? (data['style'] ?? "Custom Design")
@@ -167,13 +167,26 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
           children: [
             // Image
             isDesign
-                ? (sketchBase64 != null
-                    ? Image.memory(base64Decode(sketchBase64),
-                        fit: BoxFit.cover)
-                    : (imageBase64 != null
-                        ? Image.memory(base64Decode(imageBase64),
+                ? (imageUrl != null
+                    ? Image.network(imageUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (ctx, child, progress) =>
+                            progress == null
+                                ? child
+                                : Container(
+                                    color: Colors.black26,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                          color: Color(0xFF9333EA),
+                                          strokeWidth: 2),
+                                    )))
+                    : (sketchBase64 != null
+                        ? Image.memory(base64Decode(sketchBase64),
                             fit: BoxFit.cover)
-                        : Container(color: Colors.black26)))
+                        : (imageBase64 != null
+                            ? Image.memory(base64Decode(imageBase64),
+                                fit: BoxFit.cover)
+                            : Container(color: Colors.black26))))
                 : (imagePath != null && File(imagePath).existsSync()
                     ? Image.file(File(imagePath), fit: BoxFit.cover)
                     : (fabricBase64 != null
@@ -280,7 +293,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
       String docId, String collection) {
     final isDesign = collection == 'generated_designs';
     final colors = _parseColors(data['dominantColors'] ?? data['colors']);
-    final imageBase64 = data['imageBase64'] as String?;
+    final imageUrl = data['imageUrl'] as String?;
     final sketchBase64 = data['sketchBase64'] as String?;
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
@@ -318,12 +331,15 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                   width: double.infinity,
                   child: isDesign
                       ? Stack(
+                          fit: StackFit.expand,
                           children: [
-                            if (sketchBase64 != null)
-                              Positioned.fill(
-                                  child: Image.memory(
-                                      base64Decode(sketchBase64),
-                                      fit: BoxFit.cover)),
+                            if (imageUrl != null)
+                              Image.network(imageUrl, fit: BoxFit.cover)
+                            else if (sketchBase64 != null)
+                              Image.memory(base64Decode(sketchBase64),
+                                  fit: BoxFit.cover)
+                            else
+                              Container(color: Colors.black26),
                             if (fabricBase64 != null)
                               Positioned(
                                 bottom: 12,
@@ -354,7 +370,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
               Text(
                 isDesign ? "AI Design Creation" : "Fabric Report",
                 style: GoogleFonts.outfit(
-                    color: const Color(0xFFCCFF00),
+                    color: const Color(0xFF9333EA),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     letterSpacing: 1),
@@ -408,7 +424,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                                       color: color, shape: BoxShape.circle)),
                               const SizedBox(width: 12),
                               Text(
-                                  '#${color.value.toRadixString(16).substring(2).toUpperCase()}',
+                                  '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
                                   style: GoogleFonts.poppins(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
