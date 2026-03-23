@@ -3,22 +3,26 @@ import 'dart:typed_data';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
-class FabricClassificationResult {
-  final bool isFabric;
+import 'package:flutter/material.dart';
+
+class AnalysisResult {
+  final bool isDefective;
   final double score;
   final double confidence;
-  final String label;
+  final String message;
+  final Color color;
 
-  FabricClassificationResult({
-    required this.isFabric,
+  AnalysisResult({
+    required this.isDefective,
     required this.score,
     required this.confidence,
-    required this.label,
+    required this.message,
+    required this.color,
   });
 
   @override
   String toString() =>
-      'FabricClassificationResult(label: $label, confidence: ${(confidence * 100).toStringAsFixed(2)}%, score: $score)';
+      'AnalysisResult(message: $message, confidence: ${(confidence * 100).toStringAsFixed(2)}%, score: $score)';
 }
 
 class FabricClassifierService {
@@ -32,7 +36,7 @@ class FabricClassifierService {
   Future<void> loadModel() async {
     try {
       _interpreter = await Interpreter.fromAsset(
-        'assets/models/fabric_classifier_model.tflite',
+        'assets/models/clean_fabric_classifier.tflite',
       );
       print("✅ Fabric Classifier Model Loaded");
     } catch (e) {
@@ -40,7 +44,7 @@ class FabricClassifierService {
     }
   }
 
-  Future<FabricClassificationResult> classify(File imageFile) async {
+  Future<AnalysisResult> classify(File imageFile) async {
     if (_interpreter == null) {
       print("⚠️ Interpreter not loaded, attempting to load...");
       await loadModel();
@@ -68,11 +72,9 @@ class FabricClassifierService {
         for (int x = 0; x < 224; x++) {
           final pixel = resizedImage.getPixel(x, y);
 
-          // Sending raw pixel values (0-255) as float32
-          // The model's internal Rescaling(1./255) will handle normalization
-          input[index++] = pixel.r.toDouble();
-          input[index++] = pixel.g.toDouble();
-          input[index++] = pixel.b.toDouble();
+          input[index++] = pixel.r.toDouble() / 255.0;
+          input[index++] = pixel.g.toDouble() / 255.0;
+          input[index++] = pixel.b.toDouble() / 255.0;
         }
       }
 
@@ -87,30 +89,37 @@ class FabricClassifierService {
 
       final score = output[0][0];
 
-      // Calculate confidence and label
-      // alphabetical: 0 = fabric/clothing, 1 = non_fabric/non_clothing
-      bool isFabricResult = score < 0.5;
-      double confidence = isFabricResult ? (1.0 - score) : score;
-      String label = isFabricResult ? "Fabric" : "Not Fabric";
+      bool isFabric = score < 0.5;
 
       print("--- Fabric Analysis Debug ---");
       print("RAW OUTPUT ARRAY: $output");
       print("Final Prediction Score: $score");
-      print("Label: $label");
 
-      return FabricClassificationResult(
-        isFabric: isFabricResult,
-        score: score,
-        confidence: confidence,
-        label: label,
-      );
+      if (isFabric) {
+        return AnalysisResult(
+          isDefective: false,
+          score: score,
+          confidence: 1.0 - score,
+          message: "✅ FABRIC DETECTED",
+          color: Colors.green,
+        );
+      } else {
+        return AnalysisResult(
+          isDefective: true,
+          score: score,
+          confidence: score,
+          message: "❌ NON-FABRIC",
+          color: Colors.red,
+        );
+      }
     } catch (e) {
       print("❌ Fabric classification failed: $e");
-      return FabricClassificationResult(
-        isFabric: true,
+      return AnalysisResult(
+        isDefective: true,
         score: 0.0,
-        confidence: 0.5,
-        label: "Unknown (Error)",
+        confidence: 0.0,
+        message: "Unknown (Error)",
+        color: Colors.red,
       );
     }
   }

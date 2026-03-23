@@ -19,6 +19,7 @@ class UserController {
       }
     } catch (e) {
       print("Error fetching user data: $e");
+      
     }
     return null;
   }

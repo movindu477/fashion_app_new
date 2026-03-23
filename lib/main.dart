@@ -70,11 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _exitFlash;
   late Animation<double> _exitFade;
 
-  double _dragValue = 0.0;
-  final double _trackWidth = 320.0;
-  final double _buttonWidth = 160.0;
-  final double _trackHeight = 72.0;
-  final double _padding = 6.0;
+
 
   bool _completed = false;
 
@@ -171,7 +167,6 @@ class _SplashScreenState extends State<SplashScreen>
   void _completeSplash() async {
     setState(() {
       _completed = true;
-      _dragValue = _trackWidth - _buttonWidth - (_padding * 2);
     });
 
     await _exitController.forward();
@@ -298,114 +293,46 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Center(
                   child: _completed
                       ? const SizedBox()
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(40),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              width: _trackWidth,
-                              height: _trackHeight,
-                              padding: EdgeInsets.all(_padding),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(40),
-                                border: Border.all(
-                                    color: Colors.white.withOpacity(0.2)),
+                      : GestureDetector(
+                          onTap: () {
+                            if (_completed) return;
+                            _completeSplash();
+                          },
+                          child: Container(
+                            width: 280,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFF5200), Color(0xFFE64A19)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                              child: Stack(
-                                alignment: Alignment.centerLeft,
-                                children: [
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 30),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.chevron_right_rounded,
-                                              color:
-                                                  Colors.white.withOpacity(0.3),
-                                              size: 24),
-                                          Icon(Icons.chevron_right_rounded,
-                                              color:
-                                                  Colors.white.withOpacity(0.5),
-                                              size: 24),
-                                          Icon(Icons.chevron_right_rounded,
-                                              color:
-                                                  Colors.white.withOpacity(0.8),
-                                              size: 24),
-                                        ],
-                                      )
-                                          .animate(
-                                            onPlay: (controller) =>
-                                                controller.repeat(),
-                                          )
-                                          .shimmer(
-                                            duration: 1.5.seconds,
-                                            color: const Color(0xFFFF5200),
-                                          ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    left: _dragValue,
-                                    child: GestureDetector(
-                                      onHorizontalDragUpdate: (details) {
-                                        if (_completed) return;
-                                        setState(() {
-                                          _dragValue =
-                                              (_dragValue + details.delta.dx)
-                                                  .clamp(
-                                                      0.0,
-                                                      _trackWidth -
-                                                          _buttonWidth -
-                                                          (_padding * 2));
-                                        });
-                                      },
-                                      onHorizontalDragEnd: (details) {
-                                        if (_completed) return;
-                                        if (_dragValue >
-                                            (_trackWidth -
-                                                    _buttonWidth -
-                                                    (_padding * 2)) *
-                                                0.8) {
-                                          _completeSplash();
-                                        } else {
-                                          setState(() => _dragValue = 0.0);
-                                        }
-                                      },
-                                      child: Container(
-                                        width: _buttonWidth,
-                                        height: _trackHeight - (_padding * 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(32),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.2),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'Get Started',
-                                            style: GoogleFonts.outfit(
-                                              color: Colors.black,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF5200).withOpacity(0.4),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Get Started',
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
                             ),
                           ),
+                        ).animate(
+                          onPlay: (controller) => controller.repeat(reverse: true),
+                        ).shimmer(
+                          duration: 2.seconds,
+                          color: Colors.white.withOpacity(0.2),
                         ),
                 ),
               ),

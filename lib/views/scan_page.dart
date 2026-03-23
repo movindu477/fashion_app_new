@@ -36,7 +36,7 @@ class _ScanPageState extends State<ScanPage>
   List<Map<String, int>> dominantColors = [];
   bool analysisCompleted = false;
   String? suggestedUse;
-  FabricClassificationResult? _classificationResult;
+  AnalysisResult? _classificationResult;
 
   // Stability AI integration
   final StabilityService _stabilityService = StabilityService();
@@ -280,37 +280,25 @@ class _ScanPageState extends State<ScanPage>
       final result =
           await FabricClassifierService().classify(File(fabricImagePath!));
 
-      if (result.score > 0.7) {
-        // Definitely not fabric
+      if (result.isDefective) {
         if (mounted) {
           QuickAlert.show(
             context: context,
             type: QuickAlertType.error,
-            title: 'Material Not Recognized',
-            text:
-                'This looks like a ${result.label} (${(result.confidence * 100).toStringAsFixed(0)}% confidence). Please capture a textile or fabric surface.',
+            title: 'Not Recognized',
+            text: 'This does not appear to be a fabric surface! Please capture a clear textile or fabric.',
+            confirmBtnColor: result.color,
           );
         }
-        setState(() => _isAnalyzing = false);
+        setState(() {
+          _isAnalyzing = false;
+          _classificationResult = result;
+        });
         return;
-      } else if (result.score >= 0.3) {
-        // Uncertain material
-        if (mounted) {
-          QuickAlert.show(
-            context: context,
-            type: QuickAlertType.warning,
-            title: 'Uncertain Material',
-            text:
-                'We are not sure if this is fabric (Confidence: ${(result.confidence * 100).toStringAsFixed(0)}%). Please try again with better lighting or a closer shot.',
-          );
-        }
-        setState(() => _isAnalyzing = false);
-        return;
+      } else {
+        print(
+            "✅ High confidence good fabric detected: ${(result.confidence * 100).toStringAsFixed(2)}%");
       }
-
-      // If we reach here, prediction < 0.3 (Strong Fabric Confidence)
-      print(
-          "✅ High confidence fabric detected: ${(result.confidence * 100).toStringAsFixed(2)}%");
 
       setState(() {
         _classificationResult = result;
@@ -844,26 +832,7 @@ class _ScanPageState extends State<ScanPage>
                         Positioned(
                           right: -10,
                           bottom: -20,
-                          child: Hero(
-                            tag: 'scan_result',
-                            child: Container(
-                              width: 160,
-                              height: 160,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(28),
-                                image: DecorationImage(
-                                  image: MemoryImage(fabricImageBytes!),
-                                  fit: BoxFit.cover,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.orange.withValues(alpha: 0.3),
-                                    blurRadius: 30,
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
+                          child: const SizedBox(),
                         ),
                       Padding(
                         padding: const EdgeInsets.all(28.0),
@@ -880,50 +849,6 @@ class _ScanPageState extends State<ScanPage>
                               ),
                             ),
                             const Spacer(),
-                            if (fabricImageBytes != null && !analysisCompleted)
-                              GestureDetector(
-                                onTap:
-                                    _isAnalyzing ? null : analyzeFabricLocally,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24, vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF5200),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF5200)
-                                            .withOpacity(0.4),
-                                        blurRadius: 15,
-                                        offset: const Offset(0, 8),
-                                      )
-                                    ],
-                                  ),
-                                  child: _isAnalyzing
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.black))
-                                      : Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.analytics_rounded,
-                                                color: Colors.black, size: 20),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "Analyze Now",
-                                              style: GoogleFonts.outfit(
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.w900,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              ).animate().fadeIn().scale(),
                           ],
                         ),
                       ),
@@ -941,6 +866,11 @@ class _ScanPageState extends State<ScanPage>
                     color: Colors.white.withValues(alpha: 0.05)),
 
             const SizedBox(height: 30),
+
+            if (fabricImageBytes != null) ...[
+              _buildFullImagePreview(),
+              const SizedBox(height: 30),
+            ],
 
             // SECTION: AI STYLING
             _buildSectionHeader("AI Styling Options")
@@ -1725,11 +1655,77 @@ class _ScanPageState extends State<ScanPage>
     );
   }
 
+  Widget _buildFullImagePreview() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(36),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 24, top: 24, right: 24, bottom: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Captured Fabric",
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (!analysisCompleted && !_isAnalyzing)
+                  ElevatedButton.icon(
+                    onPressed: analyzeFabricLocally,
+                    icon: const Icon(Icons.analytics_rounded, size: 16),
+                    label: const Text("Analyze"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5200),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Hero(
+              tag: 'scan_result',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.memory(
+                  fabricImageBytes!,
+                  width: double.infinity,
+                  height: 300,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0);
+  }
+
   Widget _buildModernAnalysisProgress() {
-    double score = _classificationResult?.score ?? 0.0;
-    // Score < 0.5 is fabric
-    double fabricConfidence = (1.0 - score).clamp(0.0, 1.0);
     double confidencePercent = (_classificationResult?.confidence ?? 0.0) * 100;
+    double progressValue = _classificationResult?.confidence ?? 0.0;
 
     return Container(
       key: _resultsKey,
@@ -1758,25 +1754,31 @@ class _ScanPageState extends State<ScanPage>
                     fontSize: 18,
                     fontWeight: FontWeight.bold),
               ),
-              if (analysisCompleted)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF5200).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    _classificationResult?.label.toUpperCase() ?? "",
-                    style: GoogleFonts.outfit(
-                        color: const Color(0xFFFF5200),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5),
-                  ),
-                ),
             ],
           ),
+          if (analysisCompleted && _classificationResult != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: _classificationResult!.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: _classificationResult!.color.withOpacity(0.3)),
+              ),
+              child: Text(
+                _classificationResult!.message,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(
+                  color: _classificationResult!.color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 32),
           Center(
             child: SizedBox(
@@ -1784,7 +1786,6 @@ class _ScanPageState extends State<ScanPage>
               height: 190,
               child: Stack(
                 children: [
-                  // Outer subtle ring
                   Positioned.fill(
                     child: CircularProgressIndicator(
                       value: 1,
@@ -1792,12 +1793,11 @@ class _ScanPageState extends State<ScanPage>
                       color: Colors.white.withOpacity(0.03),
                     ),
                   ),
-                  // The main progress ring
                   Positioned.fill(
                     child: TweenAnimationBuilder<double>(
                       tween: Tween<double>(
                         begin: 0,
-                        end: _isAnalyzing ? 0.7 : fabricConfidence,
+                        end: _isAnalyzing ? 0.7 : progressValue,
                       ),
                       duration: Duration(seconds: _isAnalyzing ? 4 : 2),
                       curve: Curves.easeInOutCubic,
@@ -1806,12 +1806,14 @@ class _ScanPageState extends State<ScanPage>
                           value: value,
                           strokeWidth: 16,
                           strokeCap: StrokeCap.round,
-                          color: const Color(0xFFFF5200),
+                          color: _isAnalyzing
+                              ? const Color(0xFFFF5200)
+                              : (_classificationResult?.color ??
+                                  const Color(0xFFFF5200)),
                         );
                       },
                     ),
                   ),
-                  // Shimmering effect overlay
                   if (_isAnalyzing)
                     const Positioned.fill(
                       child: CircularProgressIndicator(
@@ -1822,7 +1824,6 @@ class _ScanPageState extends State<ScanPage>
                     )
                         .animate(onPlay: (c) => c.repeat())
                         .shimmer(duration: 1.seconds),
-                  // Center content
                   Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

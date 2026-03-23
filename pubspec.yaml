@@ -28,7 +28,7 @@ dependencies:
   url_launcher: ^6.3.0
   google_sign_in: ^6.2.1
   in_app_purchase: ^3.2.0
-  tflite_flutter: ^0.11.0
+  tflite_flutter: ^0.12.1
   image_cropper: ^8.0.2
   flutter_dotenv: ^5.1.0
   shared_preferences: ^2.2.3
@@ -60,6 +60,7 @@ flutter:
   assets:
     - .env
     - assets/images/logo.png
+    - assets/images/main3.jpg
     - assets/images/main3ori.jpg
     - assets/images/main4.jpg
     - assets/images/main5.jpg
@@ -74,4 +75,4 @@ flutter:
     - assets/images/hello2.jpg
     - assets/images/hello3.jpg
     - assets/images/hello4.jpg
-    - assets/models/fabric_classifier_model.tflite
+    - assets/models/clean_fabric_classifier.tflite
