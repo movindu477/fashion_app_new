@@ -18,19 +18,19 @@ class _WelcomePageState extends State<WelcomePage> {
   final List<Map<String, String>> _onboardingData = [
     {
       'image': 'assets/images/main4.jpg',
-      'title': 'Style\nNever\nStops',
+      'title': 'Elevate\nYour\nDesign',
       'description':
           'Elevate your unique fashion identity with AI-driven fabric analysis and trend insights.',
     },
     {
       'image': 'assets/images/main5.jpg',
-      'title': 'AI\nPowered\nDesign',
+      'title': 'AI-Driven\nAnalysis',
       'description':
           'Revolutionize your wardrobe using state-of-the-art neural networks to analyze texture and color.',
     },
     {
       'image': 'assets/images/main6.jpg',
-      'title': 'Your\nDigital\nWardrobe',
+      'title': 'Precision\nStyle\nHub',
       'description':
           'Build and manage your personalized fashion collection entirely on your device with Texora.',
     },
@@ -101,24 +101,17 @@ class _WelcomePageState extends State<WelcomePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              height: 60,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
+                          const SizedBox(height: 20),
                           const Spacer(),
                           Text(
                             _onboardingData[index]['title']!,
                             key: ValueKey('title_$index'),
                             style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 70,
+                              fontSize: 58,
                               fontWeight: FontWeight.w900,
                               height: 0.95,
-                              letterSpacing: -2.0,
+                              letterSpacing: -1.5,
                             ),
                           )
                               .animate(key: ValueKey('title_anim_$index'))

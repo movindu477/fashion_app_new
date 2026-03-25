@@ -167,13 +167,13 @@ class _ProfilePageState extends State<ProfilePage>
 
     final photoUrl =
         _userModel?.photoUrl ?? _userController.currentUser?.photoURL;
-    ImageProvider imageProvider;
+    ImageProvider? imageProvider;
     if (_localImageBytes != null) {
       imageProvider = MemoryImage(_localImageBytes!);
     } else if (photoUrl != null) {
       imageProvider = NetworkImage(photoUrl);
     } else {
-      imageProvider = const AssetImage('assets/images/logo.png');
+      imageProvider = null;
     }
 
     return Scaffold(
@@ -295,7 +295,10 @@ class _ProfilePageState extends State<ProfilePage>
                                       ? const CircularProgressIndicator(
                                           color: Color(0xFFFF5200),
                                           strokeWidth: 2)
-                                      : null,
+                                      : (imageProvider == null
+                                          ? const Icon(Icons.person,
+                                              color: Colors.white54, size: 40)
+                                          : null),
                                 ),
                               ),
                             ),

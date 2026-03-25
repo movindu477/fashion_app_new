@@ -70,8 +70,6 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _exitFlash;
   late Animation<double> _exitFade;
 
-
-
   bool _completed = false;
 
   @override
@@ -310,7 +308,8 @@ class _SplashScreenState extends State<SplashScreen>
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF5200).withOpacity(0.4),
+                                  color:
+                                      const Color(0xFFFF5200).withOpacity(0.4),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -328,12 +327,15 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ),
                           ),
-                        ).animate(
-                          onPlay: (controller) => controller.repeat(reverse: true),
-                        ).shimmer(
-                          duration: 2.seconds,
-                          color: Colors.white.withOpacity(0.2),
-                        ),
+                        )
+                          .animate(
+                            onPlay: (controller) =>
+                                controller.repeat(reverse: true),
+                          )
+                          .shimmer(
+                            duration: 2.seconds,
+                            color: Colors.white.withOpacity(0.2),
+                          ),
                 ),
               ),
             ),

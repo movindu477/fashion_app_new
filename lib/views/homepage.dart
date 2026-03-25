@@ -179,7 +179,7 @@ class _HomeViewState extends State<HomeView>
     final String displayName = _userData?['name']?.toString() ??
         _user?.displayName ??
         _user?.email?.split('@')[0] ??
-        "Arousing";
+        "Designer";
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
