@@ -179,27 +179,27 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _completeSplash() async {
+    if (!mounted) return;
     setState(() {
       _completed = true;
     });
 
-    await _exitController.forward();
+    final user = FirebaseAuth.instance.currentUser;
+    final Widget destination =
+        user != null ? const HomePage() : const WelcomePage();
 
-    if (mounted) {
-      final user = FirebaseAuth.instance.currentUser;
-      Widget destination =
-          user != null ? const HomePage() : const WelcomePage();
-
-      Navigator.pushReplacement(
-        context,
-        PageTransition(
-          type: PageTransitionType.fade,
-          child: destination,
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeInOutQuart,
-        ),
-      );
-    }
+    // Use a high-end multi-animation transition
+    Navigator.pushReplacement(
+      context,
+      PageTransition(
+        type: PageTransitionType.fade,
+        child: destination,
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.easeInOutQuart,
+        alignment: Alignment.center,
+        settings: const RouteSettings(name: 'Welcome'),
+      ),
+    );
   }
 
   @override
@@ -213,19 +213,21 @@ class _SplashScreenState extends State<SplashScreen>
           Image.asset(
             'assets/images/main3ori.jpg',
             fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
           ),
 
-          // ── Decorative Overlay (Lightened for better visibility)
+          // ── Deep Luxury Overlay
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.15),
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withValues(alpha: 0.05),
+                  Colors.black.withValues(alpha: 0.2),
+                  Colors.black.withValues(alpha: 0.8),
                 ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
           ),
@@ -244,7 +246,9 @@ class _SplashScreenState extends State<SplashScreen>
                       scale: _titleScale,
                       child: Text(
                         'TEXORA',
-                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
                           color: Colors.white,
                           fontSize: 78,
                           letterSpacing: -1,
@@ -273,7 +277,9 @@ class _SplashScreenState extends State<SplashScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             'FUTURE OF FASHION',
-                            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 12,
                               letterSpacing: 4.5,
@@ -332,7 +338,9 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Center(
                               child: Text(
                                 'Get Started',
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white,
                                   fontSize: 18,
                                   letterSpacing: 1.2,

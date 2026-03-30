@@ -223,8 +223,8 @@ class _HomeViewState extends State<HomeView>
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withValues(alpha: 0.1),
-                                Colors.black.withValues(alpha: 0.8),
+                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withValues(alpha: 0.15),
                               ],
                             ),
                           ),
@@ -239,9 +239,10 @@ class _HomeViewState extends State<HomeView>
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Spacer(),
-                          // Profile + Greeting
+                          const SizedBox(
+                              height: 40), // Increased offset to push lower
                           Row(
                             children: [
                               GestureDetector(
@@ -254,59 +255,145 @@ class _HomeViewState extends State<HomeView>
                                   }
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.all(2),
+                                  padding: const EdgeInsets.all(3),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: const Color(0xFFFF5200),
-                                        width: 1.5),
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFFFF5200),
+                                        Color(0xFFE64A19)
+                                      ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFF5200)
+                                            .withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
                                   child: CircleAvatar(
-                                    radius: 26,
+                                    radius: 28,
                                     backgroundColor: const Color(0xFF1A1A1A),
                                     backgroundImage: _userData?['photoUrl'] !=
                                             null
                                         ? NetworkImage(_userData?['photoUrl'])
                                         : null,
                                     child: _userData?['photoUrl'] == null
-                                        ? const Icon(Icons.person,
-                                            color: Colors.white54, size: 26)
+                                        ? const Icon(Icons.person_rounded,
+                                            color: Colors.white70, size: 28)
                                         : null,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Hey $displayName,",
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w400,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  )
-                                      .animate()
-                                      .fadeIn(delay: 200.ms)
-                                      .slideX(begin: -0.1, end: 0),
-                                  Text(
-                                    greeting,
-                                    style: TextStyle(
-                                      fontFamily: 'Poppins',
-                                      color:
-                                          Colors.white.withValues(alpha: 0.8),
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w400,
-                                      height: 1.0,
-                                    ),
-                                  )
-                                      .animate()
-                                      .fadeIn(delay: 400.ms)
-                                      .slideX(begin: -0.1, end: 0),
-                                ],
+                              ).animate().scale(
+                                  delay: 200.ms,
+                                  duration: 600.ms,
+                                  curve: Curves.easeOutBack),
+                              const SizedBox(width: 18),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Modern AI Badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.08)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 6,
+                                            height: 6,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFFF5200),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          )
+                                              .animate(
+                                                  onPlay: (c) => c.repeat())
+                                              .scale(
+                                                  duration: 1.seconds,
+                                                  curve: Curves.easeInOut),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "AI INSIGHTS ACTIVE",
+                                            style: TextStyle(
+                                              fontFamily: 'Poppins',
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.7),
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 1.0,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                        .animate()
+                                        .fadeIn(delay: 200.ms)
+                                        .slideY(begin: 0.2, end: 0),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "Hey $displayName,",
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color:
+                                            Colors.white.withValues(alpha: 0.8),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w300,
+                                        letterSpacing: -0.2,
+                                        height: 1.1,
+                                      ),
+                                    )
+                                        .animate()
+                                        .fadeIn(delay: 300.ms)
+                                        .slideX(begin: -0.1, end: 0),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          greeting,
+                                          style: const TextStyle(
+                                            fontFamily: 'Poppins',
+                                            color: Colors.white,
+                                            fontSize: 30,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: -1,
+                                            height: 1.1,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Icon(
+                                          currentTime.hour < 12
+                                              ? Icons.wb_twilight_rounded
+                                              : currentTime.hour < 18
+                                                  ? Icons.wb_sunny_rounded
+                                                  : Icons.nights_stay_rounded,
+                                          color: const Color(0xFFFF5200),
+                                          size: 24,
+                                        )
+                                            .animate(
+                                                onPlay: (c) =>
+                                                    c.repeat(reverse: true))
+                                            .scale(
+                                                begin: const Offset(0.9, 0.9),
+                                                end: const Offset(1.1, 1.1),
+                                                duration: 2.seconds),
+                                      ],
+                                    )
+                                        .animate()
+                                        .fadeIn(delay: 400.ms)
+                                        .slideX(begin: -0.05, end: 0),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -626,76 +713,126 @@ class _HomeViewState extends State<HomeView>
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          height: 135, // Slightly taller for more breathing room
-          padding: const EdgeInsets.all(20),
+          height: 145, // Slightly taller for premium spacing
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            color: const Color(0xFF161616), // Deeper base for contrast
+            borderRadius: BorderRadius.circular(36),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.1),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+              // Subtle inner glow matching the theme color
+              BoxShadow(
+                color: color.withValues(alpha: 0.03),
+                blurRadius: 40,
+                spreadRadius: -20,
+                offset: const Offset(0, 5),
+              ),
+            ],
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF1A1A1A),
+                const Color(0xFF1C1C1C),
                 color.withValues(alpha: 0.06),
               ],
             ),
           ),
-          child: Stack(
-            children: [
-              // Subtle glass shine
-              Positioned(
-                top: -20,
-                right: -20,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.03),
-                    shape: BoxShape.circle,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(36),
+            child: Stack(
+              children: [
+                // Minimalist decorative glass circles
+                Positioned(
+                  top: -25,
+                  right: -25,
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: color.withValues(alpha: 0.2)),
-                    ),
-                    child: Icon(icon, color: color, size: 28),
-                  ),
-                  Row(
+                Padding(
+                  padding: const EdgeInsets.all(22.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                          fontSize: 15,
-                          letterSpacing: -0.3,
+                      // High-fidelity Icon Container
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: color.withValues(alpha: 0.15),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.08),
+                              blurRadius: 10,
+                              spreadRadius: -4,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          icon,
+                          color: color,
+                          size: 26,
                         ),
                       ),
-                      Icon(Icons.arrow_forward_rounded, 
-                        color: Colors.white.withValues(alpha: 0.15), size: 14),
+                      // Label and Arrow Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight
+                                    .w500, // Medium for better legibility
+                                color: Colors.white,
+                                fontSize: 15,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.04),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              size: 10,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms).scale(
-      begin: const Offset(0.95, 0.95),
-      end: const Offset(1, 1),
-      curve: Curves.easeOutBack,
-    );
+    )
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: 0.05, end: 0, curve: Curves.easeOutBack);
   }
 }
