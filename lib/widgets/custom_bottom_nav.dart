@@ -21,7 +21,7 @@ class CustomBottomNavBar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 20,
+            blurRadius: 30,
             offset: const Offset(0, 10),
           )
         ],
@@ -110,7 +110,7 @@ class _NavBarItem extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     fontSize: 12,
                   ),
                   maxLines: 1,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class TutorialOverlay extends StatefulWidget {
@@ -92,19 +91,17 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                                   children: [
                                     Text(
                                       'Hello',
-                                      style: GoogleFonts.poppins(
+                                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                         color: Colors.white,
                                         fontSize: 36,
-                                        fontWeight: FontWeight.bold,
                                         height: 1.1,
                                       ),
                                     ),
                                     Text(
                                       widget.userName,
-                                      style: GoogleFonts.poppins(
+                                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                         color: Colors.white,
                                         fontSize: 22,
-                                        fontWeight: FontWeight.w400,
                                         height: 1.1,
                                       ),
                                     ),
@@ -145,10 +142,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                           if (_currentStep != 0)
                             Text(
                               step['title']!,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                 color: Colors.white,
                                 fontSize: 22,
-                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -157,7 +153,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 
                           Text(
                             step['description']!,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                               color: Colors.white70,
                               fontSize: 14,
                             ),
@@ -186,9 +182,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                                   _currentStep == _steps.length - 1
                                       ? "Get Started"
                                       : "Next",
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(fontFamily: 'Poppins', 
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),

@@ -4,8 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'dart:ui';
 import 'homepage.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../widgets/custom_modern_alert.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
@@ -153,33 +152,31 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
-  void _onAuthSuccess(String title, String text) async {
+  void _onAuthSuccess(String title, String text) {
     if (!mounted) return;
-    await QuickAlert.show(
+    
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.success,
+      type: CustomAlertType.success,
       title: title,
-      text: text,
-      autoCloseDuration: const Duration(seconds: 2),
-      showConfirmBtn: false,
+      message: text,
+      onBtnTap: () {
+        Navigator.pop(context);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
+        );
+      },
     );
-
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-        (route) => false,
-      );
-    }
   }
 
   void _showError(String message) {
     if (!mounted) return;
-    QuickAlert.show(
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.error,
-      title: 'Failed',
-      text: message,
-      confirmBtnColor: const Color(0xFFFF5200),
+      type: CustomAlertType.error,
+      title: 'Oops!',
+      message: message,
     );
   }
 
@@ -233,10 +230,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Text(
                     _isLogin ? 'Hi!' : 'Sign up',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
                       fontSize: 48,
-                      fontWeight: FontWeight.w900,
                     ),
                   )
                       .animate()
@@ -311,9 +307,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                     color: Colors.black)
                                 : Text(
                                     'Continue',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                       fontSize: 16,
-                                      fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -332,7 +327,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Text('or',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                       color: Colors.white38, fontSize: 12)),
                             ),
                             Expanded(
@@ -358,7 +353,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           onTap: _toggleMode,
                           child: RichText(
                             text: TextSpan(
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(fontFamily: 'Poppins', 
                                   color: Colors.white54, fontSize: 13),
                               children: [
                                 TextSpan(
@@ -369,7 +364,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                   text: _isLogin ? 'Sign up' : 'Log in',
                                   style: const TextStyle(
                                       color: Color(0xFFFF5200),
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.w400),
                                 ),
                               ],
                             ),
@@ -382,10 +377,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           onTap: () {},
                           child: Text(
                             'Forgot your password?',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                               color: const Color(0xFFFF5200).withOpacity(0.8),
                               fontSize: 13,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
@@ -418,10 +412,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       child: TextFormField(
         controller: controller,
         obscureText: isPassword && _obscurePassword,
-        style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.poppins(color: Colors.white30, fontSize: 14),
+          hintStyle: TextStyle(fontFamily: 'Poppins', color: Colors.white30, fontSize: 14),
           prefixIcon: Icon(icon, color: Colors.white38, size: 20),
           suffixIcon: isPassword
               ? IconButton(
@@ -468,10 +462,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             const SizedBox(width: 12),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],

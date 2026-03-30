@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'login.dart';
@@ -15,6 +14,15 @@ class _WelcomePageState extends State<WelcomePage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pre-cache onboarding images for buttery smooth swipes
+    for (var data in _onboardingData) {
+      precacheImage(AssetImage(data['image']!), context);
+    }
+  }
+
   final List<Map<String, String>> _onboardingData = [
     {
       'image': 'assets/images/main4.jpg',
@@ -29,7 +37,7 @@ class _WelcomePageState extends State<WelcomePage> {
           'Revolutionize your wardrobe using state-of-the-art neural networks to analyze texture and color.',
     },
     {
-      'image': 'assets/images/main6.jpg',
+      'image': 'assets/images/main6ori.jpg',
       'title': 'Precision\nStyle\nHub',
       'description':
           'Build and manage your personalized fashion collection entirely on your device with Texora.',
@@ -71,72 +79,82 @@ class _WelcomePageState extends State<WelcomePage> {
             onPageChanged: (index) => setState(() => _currentPage = index),
             itemCount: _onboardingData.length,
             itemBuilder: (context, index) {
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(
-                    _onboardingData[index]['image']!,
-                    fit: BoxFit.cover,
-                  ),
-                  // Gradient Overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.1),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.8),
-                        ],
-                        stops: const [0.0, 0.4, 1.0],
+              return RepaintBoundary(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      _onboardingData[index]['image']!,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                    ),
+                    // Gradient Overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.1),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.8),
+                          ],
+                          stops: const [0.0, 0.4, 1.0],
+                        ),
                       ),
                     ),
-                  ),
-                  // Content Area
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32.0, vertical: 40.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          const Spacer(),
-                          Text(
-                            _onboardingData[index]['title']!,
-                            key: ValueKey('title_$index'),
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 58,
-                              fontWeight: FontWeight.w900,
-                              height: 0.95,
-                              letterSpacing: -1.5,
+                    // Content Area
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32.0, vertical: 40.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 20),
+                            const Spacer(),
+                            RepaintBoundary(
+                              child: Text(
+                                _onboardingData[index]['title']!,
+                                key: ValueKey('title_$index'),
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white,
+                                  fontSize: 58,
+                                  height: 0.95,
+                                  letterSpacing: -1.5,
+                                ),
+                              )
+                                  .animate(key: ValueKey('title_anim_$index'))
+                                  .fadeIn(duration: 600.ms)
+                                  .slideX(begin: 0.2, end: 0),
                             ),
-                          )
-                              .animate(key: ValueKey('title_anim_$index'))
-                              .fadeIn(duration: 600.ms)
-                              .slideX(begin: 0.2, end: 0),
-                          const SizedBox(height: 20),
-                          // Description
-                          Text(
-                            _onboardingData[index]['description']!,
-                            key: ValueKey('desc_$index'),
-                            style: GoogleFonts.poppins(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontSize: 14,
-                              height: 1.5,
+                            const SizedBox(height: 20),
+                            // Description
+                            RepaintBoundary(
+                              child: Text(
+                                _onboardingData[index]['description']!,
+                                key: ValueKey('desc_$index'),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                  height: 1.5,
+                                ),
+                              )
+                                  .animate(key: ValueKey('desc_anim_$index'))
+                                  .fadeIn(delay: 200.ms, duration: 600.ms)
+                                  .slideY(begin: 0.2, end: 0),
                             ),
-                          )
-                              .animate(key: ValueKey('desc_anim_$index'))
-                              .fadeIn(delay: 200.ms, duration: 600.ms)
-                              .slideY(begin: 0.2, end: 0),
-                          const SizedBox(height: 120), // Space for button
-                        ],
+                            const SizedBox(height: 120), // Space for button
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -198,10 +216,11 @@ class _WelcomePageState extends State<WelcomePage> {
                               : _currentPage == 1
                                   ? "Discover AI"
                                   : "Get Started",
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
                             color: Colors.black,
                             fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),

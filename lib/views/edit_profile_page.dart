@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -105,9 +104,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         title: Text(
           "Edit Profile",
-          style: GoogleFonts.outfit(
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
             color: Colors.white,
-            fontWeight: FontWeight.w900,
             fontSize: 22,
             letterSpacing: -0.5,
           ),
@@ -126,10 +124,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: [
               Text(
                 "Personal Information",
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                   color: Colors.white,
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -164,8 +161,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               color: Colors.black, strokeWidth: 2.5))
                       : Text(
                           "Save Changes",
-                          style: GoogleFonts.outfit(
-                              fontWeight: FontWeight.w900,
+                          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
                               fontSize: 18,
                               letterSpacing: -0.2),
                         ),
@@ -189,17 +185,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             label,
-            style: GoogleFonts.poppins(
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
               color: Colors.white38,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon,
                 color: const Color(0xFFFF5200).withValues(alpha: 0.7),

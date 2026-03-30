@@ -4,7 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'views/welcome_page.dart';
 import 'views/homepage.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -34,6 +33,23 @@ class MyApp extends StatelessWidget {
       title: 'Texora',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'Poppins',
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(fontWeight: FontWeight.w400),
+          displayMedium: TextStyle(fontWeight: FontWeight.w400),
+          displaySmall: TextStyle(fontWeight: FontWeight.w400),
+          headlineLarge: TextStyle(fontWeight: FontWeight.w400),
+          headlineMedium: TextStyle(fontWeight: FontWeight.w400),
+          headlineSmall: TextStyle(fontWeight: FontWeight.w400),
+          titleLarge: TextStyle(fontWeight: FontWeight.w400),
+          titleMedium: TextStyle(fontWeight: FontWeight.w400),
+          titleSmall: TextStyle(fontWeight: FontWeight.w400),
+          bodyLarge: TextStyle(fontWeight: FontWeight.w400),
+          bodyMedium: TextStyle(fontWeight: FontWeight.w400),
+          bodySmall: TextStyle(fontWeight: FontWeight.w400),
+          labelLarge: TextStyle(fontWeight: FontWeight.w400),
+          labelSmall: TextStyle(fontWeight: FontWeight.w400),
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
         useMaterial3: true,
       ),
@@ -228,10 +244,9 @@ class _SplashScreenState extends State<SplashScreen>
                       scale: _titleScale,
                       child: Text(
                         'TEXORA',
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white,
                           fontSize: 78,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -1,
                         ),
                       ),
@@ -258,10 +273,9 @@ class _SplashScreenState extends State<SplashScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             'FUTURE OF FASHION',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
                               letterSpacing: 4.5,
                             ),
                           ),
@@ -318,10 +332,9 @@ class _SplashScreenState extends State<SplashScreen>
                             child: Center(
                               child: Text(
                                 'Get Started',
-                                style: GoogleFonts.outfit(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: Colors.white,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w800,
                                   letterSpacing: 1.2,
                                 ),
                               ),

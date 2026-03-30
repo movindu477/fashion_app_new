@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:quickalert/quickalert.dart';
+import '../widgets/custom_modern_alert.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class FabricLibraryPage extends StatefulWidget {
   const FabricLibraryPage({super.key});
@@ -52,9 +51,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
               titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
               title: Text(
                 "My Collection",
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                   color: Colors.white,
-                  fontWeight: FontWeight.w900,
                   fontSize: 24,
                   letterSpacing: -0.5,
                 ),
@@ -67,7 +65,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
               labelColor: const Color(0xFFFF5200),
               unselectedLabelColor: Colors.white38,
               indicatorWeight: 3,
-              labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              labelStyle: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, ),
               tabs: const [
                 Tab(text: "Scanned Fabrics"),
                 Tab(text: "AI Designs"),
@@ -111,10 +109,10 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 const SizedBox(height: 16),
                 Text(
                   "No items found here",
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.bold),
+                      ),
                 ),
               ],
             ),
@@ -219,9 +217,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.outfit(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
                         fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -369,9 +366,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
               const SizedBox(height: 24),
               Text(
                 isDesign ? "AI Design Creation" : "Fabric Report",
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                     color: const Color(0xFFFF5200),
-                    fontWeight: FontWeight.bold,
                     fontSize: 14,
                     letterSpacing: 1),
               ),
@@ -380,30 +376,29 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 isDesign
                     ? (data['style'] ?? "Custom Design")
                     : (data['suggestedUse'] ?? "Unknown Fabric"),
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                     color: Colors.white,
                     fontSize: 28,
-                    fontWeight: FontWeight.w900,
                     height: 1.1),
               ),
               const SizedBox(height: 24),
               if (isDesign && designConcept != null) ...[
                 Text("Design Concept",
-                    style: GoogleFonts.outfit(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold)),
+                        )),
                 const SizedBox(height: 8),
                 Text(designConcept,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                         color: Colors.white70, fontSize: 14, height: 1.6)),
                 const SizedBox(height: 24),
               ],
               Text("Color Palette",
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(fontFamily: 'Poppins', 
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.bold)),
+                      fontWeight: FontWeight.w400)),
               const SizedBox(height: 16),
               Wrap(
                 spacing: 12,
@@ -425,9 +420,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                               const SizedBox(width: 12),
                               Text(
                                   '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                       color: Colors.white,
-                                      fontWeight: FontWeight.bold,
                                       fontSize: 12)),
                             ],
                           ),
@@ -457,14 +451,13 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
 
   void _confirmDelete(BuildContext context, String docId, String? imagePath,
       String collection) {
-    QuickAlert.show(
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.warning,
+      type: CustomAlertType.error,
       title: 'Delete Item?',
-      text: 'This will permanently remove this record.',
-      confirmBtnText: 'Delete',
-      confirmBtnColor: Colors.redAccent,
-      onConfirmBtnTap: () async {
+      message: 'This will permanently remove this record.',
+      btnText: 'Delete',
+      onBtnTap: () async {
         Navigator.pop(context);
         final user = FirebaseAuth.instance.currentUser!;
         await FirebaseFirestore.instance
@@ -478,7 +471,6 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
           if (await file.exists()) await file.delete();
         }
       },
-      showCancelBtn: true,
     );
   }
 }

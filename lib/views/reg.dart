@@ -3,8 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'login.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../widgets/custom_modern_alert.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
@@ -73,15 +72,13 @@ class _RegisterPageState extends State<RegisterPage>
       }
 
       if (mounted) {
-        await QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.success,
+          type: CustomAlertType.success,
           title: 'Welcome!',
-          text: 'Account Created Successfully',
-          confirmBtnText: 'Login Now',
-          confirmBtnColor: const Color(0xFFFF5200),
-          barrierDismissible: false,
-          onConfirmBtnTap: () {
+          message: 'Account Created Successfully',
+          btnText: 'Login Now',
+          onBtnTap: () {
             Navigator.of(context).pop();
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -127,17 +124,18 @@ class _RegisterPageState extends State<RegisterPage>
       }
 
       if (mounted) {
-        await QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.success,
+          type: CustomAlertType.success,
           title: 'Welcome!',
-          text: 'Google Login Successful',
-          autoCloseDuration: const Duration(seconds: 2),
-          showConfirmBtn: false,
-        );
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomePage()),
-          (route) => false,
+          message: 'Google Login Successful',
+          onBtnTap: () {
+            Navigator.pop(context);
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomePage()),
+              (route) => false,
+            );
+          },
         );
       }
     } catch (e) {
@@ -148,12 +146,12 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   void _showQuickAlertError(String message) {
-    QuickAlert.show(
+    if (!mounted) return;
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.error,
-      title: 'Registration Failed',
-      text: message,
-      confirmBtnColor: const Color(0xFFFF5200),
+      type: CustomAlertType.error,
+      title: 'Oops!',
+      message: message,
     );
   }
 
@@ -224,10 +222,9 @@ class _RegisterPageState extends State<RegisterPage>
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Text(
                     'Sign up',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
                       fontSize: 48,
-                      fontWeight: FontWeight.w900,
                     ),
                   )
                       .animate()
@@ -295,9 +292,8 @@ class _RegisterPageState extends State<RegisterPage>
                                     color: Colors.black)
                                 : Text(
                                     'Create Account',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                       fontSize: 16,
-                                      fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -315,7 +311,7 @@ class _RegisterPageState extends State<RegisterPage>
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Text('or',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                       color: Colors.white38, fontSize: 12)),
                             ),
                             Expanded(
@@ -345,7 +341,7 @@ class _RegisterPageState extends State<RegisterPage>
                           },
                           child: RichText(
                             text: TextSpan(
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(fontFamily: 'Poppins', 
                                   color: Colors.white54, fontSize: 13),
                               children: [
                                 const TextSpan(
@@ -354,7 +350,7 @@ class _RegisterPageState extends State<RegisterPage>
                                   text: 'Log in',
                                   style: TextStyle(
                                       color: Color(0xFFFF5200),
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.w400),
                                 ),
                               ],
                             ),
@@ -389,10 +385,10 @@ class _RegisterPageState extends State<RegisterPage>
       child: TextFormField(
         controller: controller,
         obscureText: isPassword && _obscurePassword,
-        style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.poppins(color: Colors.white30, fontSize: 14),
+          hintStyle: TextStyle(fontFamily: 'Poppins', color: Colors.white30, fontSize: 14),
           prefixIcon: Icon(icon, color: Colors.white38, size: 20),
           suffixIcon: isPassword
               ? IconButton(
@@ -439,10 +435,9 @@ class _RegisterPageState extends State<RegisterPage>
             const SizedBox(width: 12),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],

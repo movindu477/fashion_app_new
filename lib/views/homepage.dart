@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -181,331 +180,408 @@ class _HomeViewState extends State<HomeView>
         _user?.email?.split('@')[0] ??
         "Designer";
 
+    final currentTime = DateTime.now();
+    String greeting;
+    if (currentTime.hour < 12) {
+      greeting = "Good morning";
+    } else if (currentTime.hour < 17) {
+      greeting = "Good afternoon";
+    } else {
+      greeting = "Good evening";
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        // Padding moved from top-level to children individual sections
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 45),
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    // Navigate to profile tab in HomePage
-                    final homepageState =
-                        context.findAncestorStateOfType<_HomePageState>();
-                    if (homepageState != null) {
-                      homepageState._onTabTapped(3);
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: const Color(0xFFFF5200), width: 1.5),
+            // Modern Header Section with Background Image
+            SizedBox(
+              height: 260,
+              child: Stack(
+                children: [
+                  // 1. Background Image via Profile.webp
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
                     ),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFF1A1A1A),
-                      backgroundImage: _userData?['photoUrl'] != null
-                          ? NetworkImage(_userData?['photoUrl'])
-                          : null,
-                      child: _userData?['photoUrl'] == null
-                          ? const Icon(Icons.person,
-                              color: Colors.white54, size: 20)
-                          : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Hello,",
-                      style: GoogleFonts.poppins(
-                          color: Colors.white54, fontSize: 13, height: 1.2),
-                    ),
-                    Row(
+                    child: Stack(
                       children: [
-                        Text(
-                          displayName,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
+                        Image.asset(
+                          'assets/images/profile.webp',
+                          fit: BoxFit.cover,
+                          height: 260,
+                          width: double.infinity,
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.1),
+                                Colors.black.withValues(alpha: 0.8),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
-            ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.1, end: 0),
-            const SizedBox(height: 30),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(36),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF5200), Color(0xFFE64A19)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF5200).withValues(alpha: 0.2),
-                    blurRadius: 40,
-                    spreadRadius: -10,
-                  )
+                  ),
+
+                  // 2. Header Content
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Spacer(),
+                          // Profile + Greeting
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  final homepageState =
+                                      context.findAncestorStateOfType<
+                                          _HomePageState>();
+                                  if (homepageState != null) {
+                                    homepageState._onTabTapped(3);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: const Color(0xFFFF5200),
+                                        width: 1.5),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 26,
+                                    backgroundColor: const Color(0xFF1A1A1A),
+                                    backgroundImage: _userData?['photoUrl'] !=
+                                            null
+                                        ? NetworkImage(_userData?['photoUrl'])
+                                        : null,
+                                    child: _userData?['photoUrl'] == null
+                                        ? const Icon(Icons.person,
+                                            color: Colors.white54, size: 26)
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Hey $displayName,",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  )
+                                      .animate()
+                                      .fadeIn(delay: 200.ms)
+                                      .slideX(begin: -0.1, end: 0),
+                                  Text(
+                                    greeting,
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      color:
+                                          Colors.white.withValues(alpha: 0.8),
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.0,
+                                    ),
+                                  )
+                                      .animate()
+                                      .fadeIn(delay: 400.ms)
+                                      .slideX(begin: -0.1, end: 0),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 55),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
+            ),
+
+            // Re-apply padding for rest of the content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Design Your\nFuture Today",
-                    style: GoogleFonts.outfit(
-                      color: Colors.black,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Transform any fabric into a professional fashion silhouette with our AI engine.",
-                    style: GoogleFonts.poppins(
-                        color: Colors.black87,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn().scale(),
-            const SizedBox(height: 35),
-            _buildSectionHeader("Quick Actions", null),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildQuickAction(
-                  "New Scan",
-                  Icons.camera_alt_rounded,
-                  const Color(0xFFFF5200),
-                  () => context
-                      .findAncestorStateOfType<_HomePageState>()
-                      ?._onTabTapped(2),
-                ),
-                const SizedBox(width: 16),
-                _buildQuickAction(
-                  "My Library",
-                  Icons.collections_bookmark_rounded,
-                  Colors.blueAccent,
-                  () => context
-                      .findAncestorStateOfType<_HomePageState>()
-                      ?._onTabTapped(1),
-                ),
-              ],
-            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildQuickAction(
-                  "View Profile",
-                  Icons.person_rounded,
-                  Colors.orangeAccent,
-                  () => context
-                      .findAncestorStateOfType<_HomePageState>()
-                      ?._onTabTapped(3),
-                ),
-                const SizedBox(width: 16),
-                _buildQuickAction(
-                  "Help Center",
-                  Icons.help_outline_rounded,
-                  Colors.orangeAccent,
-                  () {},
-                ),
-              ],
-            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1, end: 0),
-            const SizedBox(height: 40),
-            _buildSectionHeader("Recent Analysis", "View All",
-                onActionTap: () => context
-                    .findAncestorStateOfType<_HomePageState>()
-                    ?._onTabTapped(1)),
-            const SizedBox(height: 16),
-            _buildRecentScansList(),
-            const SizedBox(height: 30),
-            Container(
-              height: 60,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.auto_awesome,
-                      color: Color(0xFFFF5200), size: 22),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      "Chat with your AI Stylist...",
-                      style: GoogleFonts.poppins(
-                          color: Colors.white38, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(delay: 400.ms),
-            const SizedBox(height: 40),
-            _buildSectionHeader("AI Style Inspiration", "Explore")
-                .animate()
-                .fadeIn(delay: 800.ms)
-                .slideX(begin: -0.1, end: 0),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              height: 240,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  )
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset('assets/images/main7.jpg', fit: BoxFit.cover),
-                    Container(
+                  const SizedBox(height: 30),
+                  RepaintBoundary(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.8),
-                          ],
+                        borderRadius: BorderRadius.circular(36),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF5200), Color(0xFFE64A19)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
-                            "Trending Textures",
-                            style: GoogleFonts.outfit(
+                          const Text(
+                            "Design Your\nFuture Today",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
                               color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
+                              fontSize: 34,
+                              height: 1.0,
                             ),
                           ),
-                          Text(
-                            "Discover how AI redefines summer collections",
-                            style: GoogleFonts.poppins(
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Transform any fabric into a professional fashion silhouette with our AI engine.",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
                               color: Colors.white70,
                               fontSize: 13,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.1, end: 0),
-            const SizedBox(height: 30),
-            _buildSectionHeader("Fashion Forecast", "View All")
-                .animate()
-                .fadeIn(delay: 1000.ms)
-                .slideX(begin: -0.1, end: 0),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              height: 180,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                color: const Color(0xFF1A1A1A),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF5200)
-                                  .withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "NEXT GEN",
-                              style: GoogleFonts.outfit(
-                                color: const Color(0xFFFF5200),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "Sustain Style",
-                            style: GoogleFonts.outfit(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          Text(
-                            "Eco-friendly fabric analysis",
-                            style: GoogleFonts.poppins(
-                              color: Colors.white38,
-                              fontSize: 12,
-                            ),
-                          ),
+                    ).animate().fadeIn().scale(),
+                  ),
+                  const SizedBox(height: 35),
+                  _buildSectionHeader("Quick Actions", null),
+                  const SizedBox(height: 16),
+                  RepaintBoundary(
+                    child: Row(
+                      children: [
+                        _buildQuickAction(
+                          "New Scan",
+                          Icons.camera_alt_rounded,
+                          const Color(0xFFFF5200),
+                          () => context
+                              .findAncestorStateOfType<_HomePageState>()
+                              ?._onTabTapped(2),
+                        ),
+                        const SizedBox(width: 16),
+                        _buildQuickAction(
+                          "My Library",
+                          Icons.collections_bookmark_rounded,
+                          Colors.blueAccent,
+                          () => context
+                              .findAncestorStateOfType<_HomePageState>()
+                              ?._onTabTapped(1),
+                        ),
+                      ],
+                    )
+                        .animate()
+                        .fadeIn(delay: 200.ms)
+                        .slideY(begin: 0.1, end: 0),
+                  ),
+                  const SizedBox(height: 16),
+                  RepaintBoundary(
+                    child: Row(
+                      children: [
+                        _buildQuickAction(
+                          "View Profile",
+                          Icons.person_rounded,
+                          Colors.orangeAccent,
+                          () => context
+                              .findAncestorStateOfType<_HomePageState>()
+                              ?._onTabTapped(3),
+                        ),
+                        const SizedBox(width: 16),
+                        _buildQuickAction(
+                          "Help Center",
+                          Icons.help_outline_rounded,
+                          Colors.orangeAccent,
+                          () {},
+                        ),
+                      ],
+                    )
+                        .animate()
+                        .fadeIn(delay: 300.ms)
+                        .slideY(begin: 0.1, end: 0),
+                  ),
+                  const SizedBox(height: 45),
+                  _buildSectionHeader("AI Style Inspiration", "Explore")
+                      .animate()
+                      .fadeIn(delay: 800.ms)
+                      .slideX(begin: -0.1, end: 0),
+                  const SizedBox(height: 16),
+                  RepaintBoundary(
+                    child: Container(
+                      width: double.infinity,
+                      height: 240,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          )
                         ],
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(32),
-                        bottomRight: Radius.circular(32),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              'assets/images/main7.jpg',
+                              fit: BoxFit.cover,
+                              gaplessPlayback: true,
+                              filterQuality: FilterQuality.low,
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.8),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  const Text(
+                                    "Trending Textures",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const Text(
+                                    "Discover how AI redefines summer collections",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Image.asset('assets/images/main8.jpg',
-                          fit: BoxFit.cover),
-                    ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 800.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ),
+                  const SizedBox(height: 30),
+                  _buildSectionHeader("Fashion Forecast", "View All")
+                      .animate()
+                      .fadeIn(delay: 1000.ms)
+                      .slideX(begin: -0.1, end: 0),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32),
+                      color: const Color(0xFF1A1A1A),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.05)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 4,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF5200)
+                                        .withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "NEXT GEN",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      color: const Color(0xFFFF5200),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "Sustain Style",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                Text(
+                                  "Eco-friendly fabric analysis",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.white38,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(32),
+                              bottomRight: Radius.circular(32),
+                            ),
+                            child: Image.asset('assets/images/main8.jpg',
+                                fit: BoxFit.cover),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1, end: 0),
+                  const SizedBox(height: 100),
                 ],
               ),
-            ).animate().fadeIn(delay: 1100.ms).slideY(begin: 0.1, end: 0),
-            const SizedBox(height: 100),
+            ),
           ],
         ),
       ),
@@ -519,10 +595,11 @@ class _HomeViewState extends State<HomeView>
       children: [
         Text(
           title,
-          style: GoogleFonts.outfit(
+          style: TextStyle(
+            fontFamily: 'Poppins',
             color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w400,
             letterSpacing: -0.5,
           ),
         ),
@@ -531,10 +608,11 @@ class _HomeViewState extends State<HomeView>
             onTap: onActionTap,
             child: Text(
               action,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w400,
                 color: const Color(0xFFFF5200),
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -548,136 +626,76 @@ class _HomeViewState extends State<HomeView>
       child: GestureDetector(
         onTap: onTap,
         child: Container(
+          height: 135, // Slightly taller for more breathing room
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1A1A1A),
+                color.withValues(alpha: 0.06),
+              ],
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+              // Subtle glass shine
+              Positioned(
+                top: -20,
+                right: -20,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.03),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: GoogleFonts.outfit(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
+                    ),
+                    child: Icon(icon, color: color, size: 28),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white,
+                          fontSize: 15,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_rounded, 
+                        color: Colors.white.withValues(alpha: 0.15), size: 14),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildRecentScansList() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const SizedBox.shrink();
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('history')
-          .orderBy('timestamp', descending: true)
-          .limit(3)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
-            ),
-            child: Column(
-              children: [
-                const Icon(Icons.history_toggle_off_rounded,
-                    color: Colors.white24, size: 40),
-                const SizedBox(height: 12),
-                Text(
-                  "No recent scans yet",
-                  style:
-                      GoogleFonts.poppins(color: Colors.white38, fontSize: 13),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Column(
-          children: snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final imageUrl = data['imageUrl'] ?? '';
-            final fabricType = data['fabricType'] ?? 'Unknown';
-            final timestamp = data['timestamp'] as Timestamp?;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: imageUrl.isNotEmpty
-                          ? Image.network(imageUrl, fit: BoxFit.cover)
-                          : Container(color: Colors.black26),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          fabricType,
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          timestamp != null
-                              ? "${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}"
-                              : "Just now",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white38,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: Colors.white24),
-                ],
-              ),
-            );
-          }).toList(),
-        );
-      },
+    ).animate().fadeIn(duration: 400.ms).scale(
+      begin: const Offset(0.95, 0.95),
+      end: const Offset(1, 1),
+      curve: Curves.easeOutBack,
     );
   }
 }

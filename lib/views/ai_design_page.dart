@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:quickalert/quickalert.dart';
+import '../widgets/custom_modern_alert.dart';
 import '../services/stability_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -69,11 +68,11 @@ class _AiDesignPageState extends State<AiDesignPage>
 
   Future<void> _generateSketch() async {
     if (widget.designConcept == null) {
-      QuickAlert.show(
+      CustomModernAlert.show(
         context: context,
-        type: QuickAlertType.warning,
+        type: CustomAlertType.error,
         title: 'No Concept',
-        text: 'Please generate a design concept in the Scan page first!',
+        message: 'Please generate a design concept in the Scan page first!',
       );
       return;
     }
@@ -96,11 +95,11 @@ class _AiDesignPageState extends State<AiDesignPage>
         if (e.toString().contains("CREDITS_EXHAUSTED")) {
           _showTopUpDialog();
         } else {
-          QuickAlert.show(
+          CustomModernAlert.show(
             context: context,
-            type: QuickAlertType.error,
+            type: CustomAlertType.error,
             title: 'Sketch Failed',
-            text: e.toString(),
+            message: e.toString(),
           );
         }
       }
@@ -110,21 +109,15 @@ class _AiDesignPageState extends State<AiDesignPage>
   }
 
   void _showTopUpDialog() {
-    QuickAlert.show(
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.warning,
-      title: 'Credits Exhausted',
-      text:
-          'Image generation credits have been exhausted. Please top up on the Stability AI website to continue.',
-      confirmBtnText: 'Go to Payment',
-      confirmBtnColor: const Color(0xFFFF5200),
-      confirmBtnTextStyle: const TextStyle(
-        color: Colors.black,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-      onConfirmBtnTap: () async {
-        final url = Uri.parse("https://platform.stability.ai/account/credits");
+      type: CustomAlertType.error,
+      title: 'Top Up Required',
+      message: 'You need more credits to generate a professional sketch.',
+      btnText: 'Top Up Now',
+      onBtnTap: () async {
+        Navigator.pop(context);
+        final url = Uri.parse('https://stability.ai/generate');
         if (await canLaunchUrl(url)) {
           await launchUrl(url);
         }
@@ -163,21 +156,20 @@ class _AiDesignPageState extends State<AiDesignPage>
       });
 
       if (mounted) {
-        QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.success,
+          type: CustomAlertType.success,
           title: 'Saved!',
-          text:
-              'The sketch and fabric reference have been saved to your library.',
+          message: 'The sketch and fabric reference have been saved to your library.',
         );
       }
     } catch (e) {
       if (mounted) {
-        QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.error,
+          type: CustomAlertType.error,
           title: 'Save Failed',
-          text: e.toString(),
+          message: e.toString(),
         );
       }
     } finally {
@@ -204,10 +196,9 @@ class _AiDesignPageState extends State<AiDesignPage>
                     children: [
                       Text(
                         "AI Fashion Sketch",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white,
                           fontSize: 28,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -1,
                         ),
                       ),
@@ -251,14 +242,14 @@ class _AiDesignPageState extends State<AiDesignPage>
           const SizedBox(height: 20),
           Text(
             "Waiting for a concept...",
-            style: GoogleFonts.outfit(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                color: Colors.white, fontSize: 18, ),
           ),
           const SizedBox(height: 10),
           Text(
             "Go to the Scan tab to analyze fabric and generate a designer concept first.",
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 14),
           ),
         ],
       ),
@@ -296,14 +287,13 @@ class _AiDesignPageState extends State<AiDesignPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text("Current Concept",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', 
                             color: const Color(0xFFFF5200),
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w400,
                             fontSize: 13)),
                     Text(widget.selectedStyle ?? "Custom Style",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                             color: Colors.white,
-                            fontWeight: FontWeight.w900,
                             fontSize: 18)),
                   ],
                 ),
@@ -315,7 +305,7 @@ class _AiDesignPageState extends State<AiDesignPage>
             widget.designConcept!,
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                 color: Colors.white70, fontSize: 14, height: 1.5),
           ),
         ],
@@ -348,8 +338,8 @@ class _AiDesignPageState extends State<AiDesignPage>
                   const Icon(Icons.auto_awesome),
                   const SizedBox(width: 12),
                   Text("Generate Visual Sketch",
-                      style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w900, fontSize: 18)),
+                      style: TextStyle(fontFamily: 'Poppins', 
+                          fontWeight: FontWeight.w400, fontSize: 18)),
                 ],
               ),
       ),
@@ -478,9 +468,8 @@ class _AiDesignPageState extends State<AiDesignPage>
           const SizedBox(width: 6),
           Text(
             "$credits Credits",
-            style: GoogleFonts.outfit(
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
               color: const Color(0xFFFF5200),
-              fontWeight: FontWeight.bold,
               fontSize: 13,
             ),
           ),

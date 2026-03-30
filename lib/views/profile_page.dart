@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -216,9 +215,8 @@ class _ProfilePageState extends State<ProfilePage>
                       left: widget.onBack != null ? 70 : 20, bottom: 16),
                   title: Text(
                     "Profile",
-                    style: GoogleFonts.outfit(
+                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
-                      fontWeight: FontWeight.w900,
                       fontSize: 24,
                       letterSpacing: -0.5,
                     ),
@@ -256,10 +254,9 @@ class _ProfilePageState extends State<ProfilePage>
                               children: [
                                 Text(
                                   "Hi, $displayName!",
-                                  style: GoogleFonts.outfit(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                     color: Colors.white,
                                     fontSize: 32,
-                                    fontWeight: FontWeight.w900,
                                     letterSpacing: -1,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -267,7 +264,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 const SizedBox(height: 6),
                                 Text(
                                   _buildMemberSince(),
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                     color: Colors.white38,
                                     fontSize: 13,
                                   ),
@@ -311,10 +308,10 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(height: 40),
                       Text(
                         "Style Statistics",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', 
                           color: Colors.white,
                           fontSize: 22,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w400,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -344,10 +341,9 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(height: 40),
                       Text(
                         "Your Journey",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white,
                           fontSize: 22,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -381,10 +377,9 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(height: 40),
                       Text(
                         "Preferences",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white,
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
                         ),
                       ),
@@ -496,15 +491,14 @@ class _ProfilePageState extends State<ProfilePage>
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
-                      fontWeight: FontWeight.w500,
                       fontSize: 14),
                 ),
                 Text(
                   subtitle,
                   style:
-                      GoogleFonts.poppins(color: Colors.white38, fontSize: 11),
+                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -543,15 +537,6 @@ class _ProfilePageState extends State<ProfilePage>
         border: highlighted
             ? null
             : Border.all(color: Colors.white.withValues(alpha: 0.07)),
-        boxShadow: [
-          BoxShadow(
-            color: highlighted
-                ? const Color(0xFFFF5200).withValues(alpha: 0.35)
-                : Colors.black.withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          )
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,25 +552,24 @@ class _ProfilePageState extends State<ProfilePage>
           const SizedBox(height: 16),
           Text(
             count.toString(),
-            style: GoogleFonts.outfit(
+            style: TextStyle(fontFamily: 'Poppins', 
               color: textColor,
               fontSize: 40,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w400,
               height: 1,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             label,
-            style: GoogleFonts.outfit(
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
               color: textColor,
               fontSize: 14,
-              fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             sublabel,
-            style: GoogleFonts.poppins(
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
               color: subColor,
               fontSize: 11,
             ),
@@ -603,10 +587,10 @@ class _ProfilePageState extends State<ProfilePage>
           color: isDestructive ? Colors.orangeAccent : Colors.white70),
       title: Text(
         title,
-        style: GoogleFonts.poppins(
+        style: TextStyle(fontFamily: 'Poppins', 
           color: isDestructive ? Colors.orangeAccent : Colors.white,
           fontSize: 16,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isDestructive

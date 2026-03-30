@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -8,7 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:quickalert/quickalert.dart';
+import '../widgets/custom_modern_alert.dart';
 import '../services/color_analysis_service.dart';
 import '../services/gemini_service.dart';
 import '../services/fabric_classifier_service.dart';
@@ -146,16 +145,14 @@ class _ScanPageState extends State<ScanPage>
             const SizedBox(height: 24),
             Text(
               "Select Image Source",
-              style: GoogleFonts.outfit(
-                color: Colors.white,
+              style: TextStyle(fontFamily: 'Poppins', color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               "Capturing fabric texture directly works best",
-              style: GoogleFonts.poppins(
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                 color: Colors.white38,
                 fontSize: 13,
               ),
@@ -209,10 +206,10 @@ class _ScanPageState extends State<ScanPage>
             const SizedBox(height: 12),
             Text(
               title,
-              style: GoogleFonts.outfit(
+              style: TextStyle(fontFamily: 'Poppins', 
                 color: Colors.white,
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -282,12 +279,11 @@ class _ScanPageState extends State<ScanPage>
 
       if (result.isDefective) {
         if (mounted) {
-          QuickAlert.show(
+          CustomModernAlert.show(
             context: context,
-            type: QuickAlertType.error,
+            type: CustomAlertType.error,
             title: 'Not Recognized',
-            text: 'This does not appear to be a fabric surface! Please capture a clear textile or fabric.',
-            confirmBtnColor: result.color,
+            message: 'This does not appear to be a fabric surface! Please capture a clear textile or fabric.',
           );
         }
         setState(() {
@@ -324,12 +320,12 @@ class _ScanPageState extends State<ScanPage>
 
         if (mounted) {
           _updateAutoPrompt(); // Auto-write to prompt box after analysis
-          QuickAlert.show(
+          CustomModernAlert.show(
             context: context,
-            type: QuickAlertType.success,
+            type: CustomAlertType.success,
             title: 'Analysis Complete',
-            text: 'Fabric analyzed locally on your device!',
-            onConfirmBtnTap: () {
+            message: 'Fabric analyzed locally on your device!',
+            onBtnTap: () {
               Navigator.of(context).pop();
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (_resultsKey.currentContext != null) {
@@ -348,11 +344,11 @@ class _ScanPageState extends State<ScanPage>
       }
     } catch (e) {
       if (mounted) {
-        QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.error,
+          type: CustomAlertType.error,
           title: 'Error',
-          text: "Local analysis failed: $e",
+          message: "Local analysis failed: $e",
         );
       }
     } finally {
@@ -386,11 +382,11 @@ class _ScanPageState extends State<ScanPage>
 
   Future<void> _handleGenerateDesign() async {
     if (fabricImageBytes == null || dominantColors.isEmpty) {
-      QuickAlert.show(
+      CustomModernAlert.show(
         context: context,
-        type: QuickAlertType.warning,
+        type: CustomAlertType.error, // mapping warning to error for now
         title: 'Missing Data',
-        text: 'Please scan and analyze fabric first!',
+        message: 'Please scan and analyze fabric first!',
       );
       return;
     }
@@ -440,11 +436,11 @@ class _ScanPageState extends State<ScanPage>
       }
     } catch (e) {
       if (mounted) {
-        QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.error,
+          type: CustomAlertType.error,
           title: 'Design Failed',
-          text: e.toString(),
+          message: e.toString(),
         );
       }
     } finally {
@@ -511,7 +507,7 @@ class _ScanPageState extends State<ScanPage>
                     child: Center(
                       child: Text(
                         "Pinch to zoom · Tap × to close",
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white38,
                           fontSize: 12,
                         ),
@@ -529,11 +525,11 @@ class _ScanPageState extends State<ScanPage>
 
   Future<void> _generateSketch() async {
     if (_generatedDesignConcept == null) {
-      QuickAlert.show(
+      CustomModernAlert.show(
         context: context,
-        type: QuickAlertType.warning,
+        type: CustomAlertType.error,
         title: 'No Concept',
-        text: 'Please generate a design concept first!',
+        message: 'Please generate a design concept first!',
       );
       return;
     }
@@ -556,11 +552,11 @@ class _ScanPageState extends State<ScanPage>
         if (e.toString().contains("CREDITS_EXHAUSTED")) {
           _showTopUpDialog();
         } else {
-          QuickAlert.show(
+          CustomModernAlert.show(
             context: context,
-            type: QuickAlertType.error,
+            type: CustomAlertType.error,
             title: 'Sketch Failed',
-            text: e.toString(),
+            message: e.toString(),
           );
         }
       }
@@ -570,13 +566,14 @@ class _ScanPageState extends State<ScanPage>
   }
 
   void _showTopUpDialog() {
-    QuickAlert.show(
+    CustomModernAlert.show(
       context: context,
-      type: QuickAlertType.info,
+      type: CustomAlertType.error,
       title: 'Top Up Required',
-      text: 'You need more credits to generate a professional sketch.',
-      confirmBtnText: 'Top Up Now',
-      onConfirmBtnTap: () async {
+      message: 'You need more credits to generate a professional sketch.',
+      btnText: 'Top Up Now',
+      onBtnTap: () async {
+        Navigator.pop(context);
         final url = Uri.parse('https://stability.ai/generate');
         if (await canLaunchUrl(url)) {
           await launchUrl(url);
@@ -612,10 +609,10 @@ class _ScanPageState extends State<ScanPage>
               const SizedBox(width: 4),
               Text(
                 "$credits Credits",
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', 
                   color: const Color(0xFFFF5200),
                   fontSize: 11,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -667,21 +664,21 @@ class _ScanPageState extends State<ScanPage>
       });
 
       if (mounted) {
-        QuickAlert.show(
+        CustomModernAlert.show(
           context: context,
-          type: QuickAlertType.success,
+          type: CustomAlertType.success,
           title: 'Saved!',
-          text: 'Fashion sketch added to your library.',
+          message: 'Fashion sketch added to your library.',
         );
       }
     } catch (e) {
       if (mounted) {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Save Failed',
-          text: e.toString(),
-        );
+          CustomModernAlert.show(
+            context: context,
+            type: CustomAlertType.error,
+            title: 'Save Failed',
+            message: e.toString(),
+          );
       }
     } finally {
       if (mounted) setState(() => _isSavingSketch = false);
@@ -762,10 +759,9 @@ class _ScanPageState extends State<ScanPage>
               children: [
                 Text(
                   "Fabric Scanner",
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                     color: Colors.white,
                     fontSize: 32,
-                    fontWeight: FontWeight.w900,
                     letterSpacing: -1,
                   ),
                 ),
@@ -773,7 +769,7 @@ class _ScanPageState extends State<ScanPage>
             ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
             Text(
               "AI-powered textile analysis",
-              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 14),
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white54, fontSize: 14),
             ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
             const SizedBox(height: 30),
 
@@ -790,29 +786,24 @@ class _ScanPageState extends State<ScanPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      blurRadius: 40,
-                      spreadRadius: -10,
-                    )
-                  ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(36),
                   child: Stack(
                     children: [
                       Positioned.fill(
-                        child: _videoController.value.isInitialized
-                            ? FittedBox(
-                                fit: BoxFit.cover,
-                                child: SizedBox(
-                                  width: _videoController.value.size.width,
-                                  height: _videoController.value.size.height,
-                                  child: VideoPlayer(_videoController),
-                                ),
-                              )
-                            : Container(color: Colors.black),
+                        child: RepaintBoundary(
+                          child: _videoController.value.isInitialized
+                              ? FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: _videoController.value.size.width,
+                                    height: _videoController.value.size.height,
+                                    child: VideoPlayer(_videoController),
+                                  ),
+                                )
+                              : Container(color: Colors.black),
+                        ),
                       ),
                       Positioned.fill(
                         child: Container(
@@ -841,10 +832,10 @@ class _ScanPageState extends State<ScanPage>
                           children: [
                             Text(
                               "Tap to\nScan Fabric",
-                              style: GoogleFonts.outfit(
+                              style: TextStyle(fontFamily: 'Poppins', 
                                 color: Colors.white,
                                 fontSize: 32,
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w400,
                                 height: 0.9,
                               ),
                             ),
@@ -934,10 +925,9 @@ class _ScanPageState extends State<ScanPage>
                   children: [
                     Text(
                       "Select Design Style",
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                         color: Colors.white70,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -958,13 +948,11 @@ class _ScanPageState extends State<ScanPage>
                                   _updateAutoPrompt();
                                 }
                               },
-                              labelStyle: GoogleFonts.poppins(
-                                color:
-                                    Colors.black, // Always black as requested
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
+                                 color: Colors.black,
                                 fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
                               ),
                               selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
@@ -982,10 +970,10 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Garment Type",
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(fontFamily: 'Poppins', 
                         color: Colors.white70,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1005,12 +993,11 @@ class _ScanPageState extends State<ScanPage>
                                   _updateAutoPrompt();
                                 }
                               },
-                              labelStyle: GoogleFonts.poppins(
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
                                 color: Colors.black,
                                 fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
                               ),
                               selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
@@ -1028,11 +1015,10 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Target Gender",
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(fontFamily: 'Poppins', 
                         color: Colors.white70,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                        ),
                     ),
                     const SizedBox(height: 12),
                     SingleChildScrollView(
@@ -1051,12 +1037,11 @@ class _ScanPageState extends State<ScanPage>
                                   _updateAutoPrompt();
                                 }
                               },
-                              labelStyle: GoogleFonts.poppins(
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
                                 color: Colors.black,
                                 fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
                               ),
                               selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
@@ -1074,10 +1059,11 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Best for Occasion",
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
                         color: Colors.white70,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1097,12 +1083,11 @@ class _ScanPageState extends State<ScanPage>
                                   _updateAutoPrompt();
                                 }
                               },
-                              labelStyle: GoogleFonts.poppins(
+                              labelStyle: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
                                 color: Colors.black,
                                 fontSize: 12,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
                               ),
                               selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
@@ -1120,21 +1105,21 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Designer Instructions (Optional)",
-                      style: GoogleFonts.outfit(
+                      style: TextStyle(fontFamily: 'Poppins', 
                         color: Colors.white70,
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _promptController,
                       maxLines: 8, // Increased height
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: "e.g. Minimalist silhouette for summer...",
-                        hintStyle: GoogleFonts.poppins(
+                        hintStyle: TextStyle(fontFamily: 'Poppins', 
                             color: Colors.white24, fontSize: 13),
                         filled: true,
                         fillColor: Colors.black.withValues(alpha: 0.2),
@@ -1187,8 +1172,7 @@ class _ScanPageState extends State<ScanPage>
                                   const SizedBox(width: 10),
                                   Text(
                                     "Generate AI Design Concept",
-                                    style: GoogleFonts.outfit(
-                                      fontWeight: FontWeight.w900,
+                                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
                                       fontSize: 16,
                                       letterSpacing: -0.2,
                                     ),
@@ -1245,9 +1229,8 @@ class _ScanPageState extends State<ScanPage>
                               ),
                               child: Text(
                                 _selectedStyle.toUpperCase(),
-                                style: GoogleFonts.outfit(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: const Color(0xFFFF5200),
-                                  fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                   letterSpacing: 1,
                                 ),
@@ -1262,10 +1245,9 @@ class _ScanPageState extends State<ScanPage>
                       const SizedBox(height: 20),
                       Text(
                         "Designer's Concept",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white,
                           fontSize: 20,
-                          fontWeight: FontWeight.w900,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1273,7 +1255,7 @@ class _ScanPageState extends State<ScanPage>
                         _generatedDesignConcept != null
                             ? _getPureDesignText(_generatedDesignConcept!)
                             : "No description available",
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                           color: Colors.white70,
                           fontSize: 14,
                           height: 1.6,
@@ -1283,10 +1265,10 @@ class _ScanPageState extends State<ScanPage>
                       // Added: Used Colors for reference
                       Text(
                         "Captured Colors Used",
-                        style: GoogleFonts.outfit(
+                        style: TextStyle(fontFamily: 'Poppins', 
                           color: Colors.white54,
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1321,10 +1303,9 @@ class _ScanPageState extends State<ScanPage>
                                 const SizedBox(width: 8),
                                 Text(
                                   hex,
-                                  style: GoogleFonts.sourceCodePro(
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                     color: Colors.white.withValues(alpha: 0.8),
                                     fontSize: 11,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -1394,16 +1375,15 @@ class _ScanPageState extends State<ScanPage>
                             children: [
                               Text(
                                 "AI Fashion Sketch",
-                                style: GoogleFonts.outfit(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: Colors.white,
                                   fontSize: 22,
-                                  fontWeight: FontWeight.w900,
                                   letterSpacing: -0.5,
                                 ),
                               ),
                               Text(
                                 "Powered by Stability AI",
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: Colors.white38,
                                   fontSize: 11,
                                 ),
@@ -1466,7 +1446,7 @@ class _ScanPageState extends State<ScanPage>
                                         const SizedBox(width: 4),
                                         Text(
                                           "Tap to expand",
-                                          style: GoogleFonts.poppins(
+                                          style: TextStyle(fontFamily: 'Poppins', 
                                             color: Colors.white70,
                                             fontSize: 10,
                                           ),
@@ -1506,8 +1486,7 @@ class _ScanPageState extends State<ScanPage>
                                   _isGeneratingSketch
                                       ? "Generating..."
                                       : "Regenerate",
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.bold,
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1533,8 +1512,7 @@ class _ScanPageState extends State<ScanPage>
                                     size: 18),
                                 label: Text(
                                   "Save to Library",
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.bold,
+                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1586,17 +1564,16 @@ class _ScanPageState extends State<ScanPage>
                               const SizedBox(height: 20),
                               Text(
                                 "Your Sketch Awaits",
-                                style: GoogleFonts.outfit(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: Colors.white,
                                   fontSize: 20,
-                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 "Tap below to generate a\nprofessional fashion illustration",
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                                   color: Colors.white38,
                                   fontSize: 13,
                                   height: 1.5,
@@ -1626,8 +1603,8 @@ class _ScanPageState extends State<ScanPage>
                               _isGeneratingSketch
                                   ? "Generating Sketch..."
                                   : "Create Fashion Sketch",
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w900,
+                              style: TextStyle(fontFamily: 'Poppins', 
+                                fontWeight: FontWeight.w400,
                                 fontSize: 16,
                               ),
                             ),
@@ -1680,10 +1657,9 @@ class _ScanPageState extends State<ScanPage>
               children: [
                 Text(
                   "Captured Fabric",
-                  style: GoogleFonts.outfit(
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 if (!analysisCompleted && !_isAnalyzing)
@@ -1749,10 +1725,10 @@ class _ScanPageState extends State<ScanPage>
             children: [
               Text(
                 _isAnalyzing ? "Analyzing material..." : "Material Identified",
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold),
+                    ),
               ),
             ],
           ),
@@ -1770,10 +1746,9 @@ class _ScanPageState extends State<ScanPage>
               child: Text(
                 _classificationResult!.message,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                   color: _classificationResult!.color,
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -1832,18 +1807,17 @@ class _ScanPageState extends State<ScanPage>
                           _isAnalyzing
                               ? "..."
                               : "${confidencePercent.toStringAsFixed(1)}%",
-                          style: GoogleFonts.outfit(
+                          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                               color: Colors.white,
                               fontSize: 36,
-                              fontWeight: FontWeight.w900,
                               letterSpacing: -1),
                         ),
                         Text(
                           _isAnalyzing ? "Processing" : "Confidence",
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                               color: Colors.white38,
                               fontSize: 12,
-                              fontWeight: FontWeight.w500),
+                              ),
                         ),
                       ],
                     ),
@@ -1881,10 +1855,10 @@ class _ScanPageState extends State<ScanPage>
             // Re-adding the color palette here for accessibility
             Text(
               "Detected Palette",
-              style: GoogleFonts.outfit(
+              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                   color: Colors.white70,
                   fontSize: 13,
-                  fontWeight: FontWeight.w600),
+                  ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1916,10 +1890,9 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 8),
                     Text(
                       hex,
-                      style: GoogleFonts.sourceCodePro(
+                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                         color: Colors.white54,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -1953,17 +1926,17 @@ class _ScanPageState extends State<ScanPage>
               const SizedBox(width: 8),
               Text(label,
                   style:
-                      GoogleFonts.poppins(color: Colors.white38, fontSize: 11)),
+                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 11)),
             ],
           ),
           const SizedBox(height: 10),
           Text(value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(
+              style: TextStyle(fontFamily: 'Poppins', 
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold)),
+                  fontWeight: FontWeight.w400)),
         ],
       ),
     );
@@ -1972,8 +1945,8 @@ class _ScanPageState extends State<ScanPage>
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: GoogleFonts.outfit(
-          color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+          color: Colors.white, fontSize: 20, ),
     );
   }
 
@@ -1995,13 +1968,12 @@ class _ScanPageState extends State<ScanPage>
               Icon(icon, color: const Color(0xFFFF5200), size: 28),
               const Spacer(),
               Text(title,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
                       fontSize: 16)),
               Text(subtitle,
                   style:
-                      GoogleFonts.poppins(color: Colors.white38, fontSize: 12)),
+                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 12)),
             ],
           ),
         ),
