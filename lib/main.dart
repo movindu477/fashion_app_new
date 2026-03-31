@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'views/welcome_page.dart';
 import 'views/homepage.dart';
+import 'views/login.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -186,7 +186,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     final user = FirebaseAuth.instance.currentUser;
     final Widget destination =
-        user != null ? const HomePage() : const WelcomePage();
+        user != null ? const HomePage() : const LoginPage();
 
     // Use a high-end multi-animation transition
     Navigator.pushReplacement(

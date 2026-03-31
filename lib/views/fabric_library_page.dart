@@ -141,14 +141,14 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
   Widget _buildItemCard(BuildContext context, Map<String, dynamic> data,
       String docId, String collection) {
     final isDesign = collection == 'generated_designs';
-    final imageUrl = data['imageUrl'] as String?; // Firebase Storage URL (new)
+    final imageUrl = data['imageUrl'] as String?; // Firebase Storage URL
     final imageBase64 = data['imageBase64'] as String?; // legacy
-    final sketchBase64 = data['sketchBase64'] as String?; // legacy
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
+    
     final title = isDesign
         ? (data['style'] ?? "Custom Design")
-        : (data['suggestedUse'] ?? "Fabric Scan");
+        : (data['fabricType'] ?? data['suggestedUse'] ?? "Fabric Scan");
     final colors = _parseColors(data['dominantColors'] ?? data['colors']);
 
     return GestureDetector(
@@ -163,37 +163,38 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Image
-            isDesign
-                ? (imageUrl != null
-                    ? Image.network(imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (ctx, child, progress) =>
-                            progress == null
-                                ? child
-                                : Container(
-                                    color: Colors.black26,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                          color: Color(0xFFFF5200),
-                                          strokeWidth: 2),
-                                    )))
-                    : (sketchBase64 != null
-                        ? Image.memory(base64Decode(sketchBase64),
-                            fit: BoxFit.cover)
-                        : (imageBase64 != null
-                            ? Image.memory(base64Decode(imageBase64),
-                                fit: BoxFit.cover)
-                            : Container(color: Colors.black26))))
-                : (imagePath != null && File(imagePath).existsSync()
-                    ? Image.file(File(imagePath), fit: BoxFit.cover)
-                    : (fabricBase64 != null
-                        ? Image.memory(base64Decode(fabricBase64),
-                            fit: BoxFit.cover)
+            // Optimized Image Loading (prioritize cloud URL)
+            imageUrl != null
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (ctx, child, progress) => progress == null
+                        ? child
                         : Container(
                             color: Colors.black26,
-                            child: const Icon(Icons.style_rounded,
-                                color: Colors.white12)))),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFFF5200),
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                    errorBuilder: (ctx, err, stack) => Container(
+                      color: Colors.black26,
+                      child: const Icon(Icons.broken_image_rounded,
+                          color: Colors.white12, size: 30),
+                    ),
+                  )
+                : (imageBase64 != null
+                    ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
+                    : (fabricBase64 != null
+                        ? Image.memory(base64Decode(fabricBase64), fit: BoxFit.cover)
+                        : (imagePath != null && File(imagePath).existsSync()
+                            ? Image.file(File(imagePath), fit: BoxFit.cover)
+                            : Container(
+                                color: Colors.black26,
+                                child: const Icon(Icons.style_rounded,
+                                    color: Colors.white12))))),
 
             // Overlay
             Positioned.fill(
@@ -326,41 +327,23 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 child: SizedBox(
                   height: 350,
                   width: double.infinity,
-                  child: isDesign
-                      ? Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (imageUrl != null)
-                              Image.network(imageUrl, fit: BoxFit.cover)
-                            else if (sketchBase64 != null)
-                              Image.memory(base64Decode(sketchBase64),
+                  child: imageUrl != null
+                      ? Image.network(imageUrl, fit: BoxFit.cover,
+                          loadingBuilder: (ctx, child, progress) => progress ==
+                                  null
+                              ? child
+                              : const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Color(0xFFFF5200))))
+                      : (sketchBase64 != null
+                          ? Image.memory(base64Decode(sketchBase64),
+                              fit: BoxFit.cover)
+                          : (fabricBase64 != null
+                              ? Image.memory(base64Decode(fabricBase64),
                                   fit: BoxFit.cover)
-                            else
-                              Container(color: Colors.black26),
-                            if (fabricBase64 != null)
-                              Positioned(
-                                bottom: 12,
-                                right: 12,
-                                child: Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: Colors.white, width: 2),
-                                    image: DecorationImage(
-                                      image: MemoryImage(
-                                          base64Decode(fabricBase64)),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
-                      : (imagePath != null && File(imagePath).existsSync()
-                          ? Image.file(File(imagePath), fit: BoxFit.cover)
-                          : Container(color: Colors.black26)),
+                              : (imagePath != null && File(imagePath).existsSync()
+                                  ? Image.file(File(imagePath), fit: BoxFit.cover)
+                                  : Container(color: Colors.black26)))),
                 ),
               ),
               const SizedBox(height: 24),

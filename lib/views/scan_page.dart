@@ -81,6 +81,20 @@ class _ScanPageState extends State<ScanPage>
     "Accessory"
   ];
 
+  String _selectedFabricType = "Cotton";
+  final List<String> _fabricTypeOptions = [
+    "Cotton",
+    "Silk",
+    "Linen",
+    "Wool",
+    "Polyester",
+    "Denim",
+    "Leather",
+    "Chiffon",
+    "Velvet",
+    "Satin"
+  ];
+
   final GlobalKey _resultsKey = GlobalKey();
   final GlobalKey _designResultKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
@@ -365,18 +379,33 @@ class _ScanPageState extends State<ScanPage>
     if (user == null || fabricImagePath == null) return;
 
     try {
+      // 1. Upload the fabric image to Firebase Storage
+      final fileName = 'fabrics/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance.ref().child(fileName);
+      
+      final uploadTask = ref.putFile(
+        File(fabricImagePath!),
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // 2. Save metadata + URL to Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('scanned_fabrics')
           .add({
-        'imagePath': fabricImagePath,
+        'imageUrl': downloadUrl, // Reliable cloud URL
+        'imagePath': fabricImagePath, // Keep local for cache if needed
         'dominantColors': dominantColors,
         'suggestedUse': suggestedUse,
+        'fabricType': _selectedFabricType,
         'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint("Error saving to Firestore: $e");
+      debugPrint("Error saving fabric analysis to cloud: $e");
     }
   }
 
@@ -695,7 +724,7 @@ class _ScanPageState extends State<ScanPage>
     }
 
     String autoText =
-        "As a professional fashion designer, generate a highly detailed and editorial design concept for a $_selectedStyle $_selectedGarment designed for $_selectedGender, suitable for a $_selectedOccasion occasion. $colorInfo Focus heavily on how these specific colors are applied to different parts of the garment.";
+        "As a professional fashion designer, generate a highly detailed and editorial design concept for a $_selectedStyle $_selectedGarment made from premium $_selectedFabricType fabric, designed for $_selectedGender, suitable for a $_selectedOccasion occasion. $colorInfo Focus heavily on how these specific colors are applied to different parts of the $_selectedFabricType $_selectedGarment.";
 
     // Always update the prompt to reflect current selections
     setState(() {
@@ -1092,6 +1121,51 @@ class _ScanPageState extends State<ScanPage>
                               selectedColor: const Color(0xFFFF5200),
                               backgroundColor:
                                   Colors.white.withValues(alpha: 0.05),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: BorderSide.none,
+                              showCheckmark: false,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "Fabric Material Type",
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _fabricTypeOptions.map((fabric) {
+                          bool isSelected = _selectedFabricType == fabric;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(fabric),
+                              selected: isSelected,
+                              onSelected: (val) {
+                                if (val) {
+                                  setState(() => _selectedFabricType = fabric);
+                                  _updateAutoPrompt();
+                                }
+                              },
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black,
+                                fontSize: 12,
+                              ),
+                              selectedColor: const Color(0xFFFF5200),
+                              backgroundColor: Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

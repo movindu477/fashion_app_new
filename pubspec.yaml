@@ -70,6 +70,7 @@ flutter:
     - assets/images/main7.jpg
     - assets/images/main8.jpg
     - assets/images/login.jpg
+    - assets/images/login.webp
     - assets/images/register.jpg
     - assets/images/login2.png
     - assets/images/register2.png

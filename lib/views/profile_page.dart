@@ -10,6 +10,7 @@ import 'edit_profile_page.dart';
 import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
 import '../widgets/custom_bottom_nav.dart';
+import '../widgets/custom_modern_alert.dart';
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -144,13 +145,22 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _logout() async {
-    await _userController.signOut();
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-        (route) => false,
-      );
-    }
+    CustomModernAlert.show(
+      context: context,
+      type: CustomAlertType.success,
+      title: 'Logged Out',
+      message: 'You have been successfully signed out.',
+      btnText: 'LOG IN',
+      onBtnTap: () async {
+        await _userController.signOut();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+            (route) => false,
+          );
+        }
+      },
+    );
   }
 
   @override
