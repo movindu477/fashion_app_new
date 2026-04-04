@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:page_transition/page_transition.dart';
 import 'reg.dart';
+import '../main.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -187,7 +188,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
+                                onTap: () {
+                                  if (Navigator.of(context).canPop()) {
+                                    Navigator.pop(context);
+                                  } else {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SplashScreen()),
+                                    );
+                                  }
+                                },
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
