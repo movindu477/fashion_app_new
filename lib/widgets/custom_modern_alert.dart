@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -9,6 +10,7 @@ class CustomModernAlert extends StatelessWidget {
   final CustomAlertType type;
   final VoidCallback onBtnTap;
   final String btnText;
+  final Uint8List? imageBytes;
 
   const CustomModernAlert({
     Key? key,
@@ -17,6 +19,7 @@ class CustomModernAlert extends StatelessWidget {
     required this.type,
     required this.onBtnTap,
     this.btnText = "CONTINUE",
+    this.imageBytes,
   }) : super(key: key);
 
   static void show({
@@ -26,6 +29,7 @@ class CustomModernAlert extends StatelessWidget {
     required CustomAlertType type,
     String? btnText,
     VoidCallback? onBtnTap,
+    Uint8List? imageBytes,
   }) {
     showDialog(
       context: context,
@@ -36,6 +40,30 @@ class CustomModernAlert extends StatelessWidget {
         type: type,
         btnText: btnText ?? (type == CustomAlertType.success ? "CONTINUE" : "GO BACK"),
         onBtnTap: onBtnTap ?? () => Navigator.pop(context),
+        imageBytes: imageBytes,
+      ),
+    );
+  }
+
+  static Future<void> showAndAwait({
+    required BuildContext context,
+    required String title,
+    required String message,
+    required CustomAlertType type,
+    String? btnText,
+    VoidCallback? onBtnTap,
+    Uint8List? imageBytes,
+  }) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => CustomModernAlert(
+        title: title,
+        message: message,
+        type: type,
+        btnText: btnText ?? (type == CustomAlertType.success ? "CONTINUE" : "GO BACK"),
+        onBtnTap: onBtnTap ?? () => Navigator.pop(context),
+        imageBytes: imageBytes,
       ),
     );
   }
@@ -60,7 +88,7 @@ class CustomModernAlert extends StatelessWidget {
           children: [
             // Top Accent Graphic
             Container(
-              height: 140,
+              height: imageBytes != null ? 180 : 140,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.05),
@@ -84,15 +112,47 @@ class CustomModernAlert extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Icon Circle
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: color, width: 3),
+                  if (imageBytes != null) ...[
+                    // Fabric thumbnail with check badge
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.memory(
+                            imageBytes!,
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.cover,
+                          ),
+                        ).animate().scale(delay: 100.ms, duration: 400.ms, curve: Curves.easeOutBack),
+                        // Check badge positioned at bottom-right of image
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Icon(icon, color: Colors.white, size: 16),
+                          ).animate().scale(delay: 400.ms, duration: 400.ms, curve: Curves.elasticOut),
+                        ),
+                      ],
                     ),
-                    child: Icon(icon, color: color, size: 40),
-                  ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.elasticOut),
+                  ] else ...[
+                    // Icon Circle (no image)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: color, width: 3),
+                      ),
+                      child: Icon(icon, color: color, size: 40),
+                    ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.elasticOut),
+                  ],
                 ],
               ),
             ),

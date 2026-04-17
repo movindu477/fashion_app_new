@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image/image.dart' as img;
 import '../widgets/custom_modern_alert.dart';
 import '../services/color_analysis_service.dart';
 import '../services/gemini_service.dart';
@@ -334,7 +336,9 @@ class _ScanPageState extends State<ScanPage>
 
         if (mounted) {
           _updateAutoPrompt(); // Auto-write to prompt box after analysis
-          CustomModernAlert.show(
+
+          // Step 1: Show "Analysis Complete" dialog and await dismissal
+          await CustomModernAlert.showAndAwait(
             context: context,
             type: CustomAlertType.success,
             title: 'Analysis Complete',
@@ -354,7 +358,27 @@ class _ScanPageState extends State<ScanPage>
             },
           );
         }
+
+        // Step 2: Save to Firestore after dialog is dismissed
         await _saveAnalysisToFirestore();
+
+        // Step 3: Show "Saved to Collection" confirmation with fabric image
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (!mounted) return;
+        await CustomModernAlert.showAndAwait(
+          // ignore: use_build_context_synchronously
+          context: context,
+          type: CustomAlertType.success,
+          title: 'Saved to Collection!',
+          message: 'Your scanned fabric has been stored in My Collection under Scanned Fabrics.',
+          btnText: 'VIEW COLLECTION',
+          imageBytes: fabricImageBytes,
+          onBtnTap: () {
+            // ignore: use_build_context_synchronously
+            Navigator.of(context).pop();
+            widget.onHistoryTap?.call();
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -378,35 +402,51 @@ class _ScanPageState extends State<ScanPage>
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || fabricImagePath == null) return;
 
+    String? downloadUrl;
+    String? imageBase64;
+
+    // 1. Try uploading to Firebase Storage (user-scoped path)
     try {
-      // 1. Upload the fabric image to Firebase Storage
-      final fileName = 'fabrics/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName =
+          'users/${user.uid}/fabrics/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final ref = FirebaseStorage.instance.ref().child(fileName);
-      
-      final uploadTask = ref.putFile(
+      final snapshot = await ref.putFile(
         File(fabricImagePath!),
         SettableMetadata(contentType: 'image/jpeg'),
       );
-      
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-
-      // 2. Save metadata + URL to Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('scanned_fabrics')
-          .add({
-        'imageUrl': downloadUrl, // Reliable cloud URL
-        'imagePath': fabricImagePath, // Keep local for cache if needed
-        'dominantColors': dominantColors,
-        'suggestedUse': suggestedUse,
-        'fabricType': _selectedFabricType,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      downloadUrl = await snapshot.ref.getDownloadURL();
     } catch (e) {
-      debugPrint("Error saving fabric analysis to cloud: $e");
+      debugPrint("Storage upload failed, using base64 fallback: $e");
     }
+
+    // 2. If Storage failed, compress + base64-encode the image as fallback
+    if (downloadUrl == null && fabricImageBytes != null) {
+      try {
+        final decoded = img.decodeImage(fabricImageBytes!);
+        if (decoded != null) {
+          final resized = img.copyResize(decoded, width: 400);
+          final compressed = img.encodeJpg(resized, quality: 70);
+          imageBase64 = base64Encode(compressed);
+        }
+      } catch (e) {
+        debugPrint("Base64 fallback encoding failed: $e");
+      }
+    }
+
+    // 3. Always write Firestore document (with whatever image data we have)
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('scanned_fabrics')
+        .add({
+      if (downloadUrl != null) 'imageUrl': downloadUrl,
+      if (imageBase64 != null) 'imageBase64': imageBase64,
+      'imagePath': fabricImagePath,
+      'dominantColors': dominantColors,
+      'suggestedUse': suggestedUse,
+      'fabricType': _selectedFabricType,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> _handleGenerateDesign() async {
@@ -660,30 +700,51 @@ class _ScanPageState extends State<ScanPage>
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("User not logged in");
 
-      // 1. Upload sketch image to Firebase Storage
-      final fileName =
-          'sketches/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance.ref().child(fileName);
-      final uploadTask = ref.putData(
-        _generatedSketch!,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
+      String? downloadUrl;
+      String? sketchBase64;
 
-      // 2. Build color list for Firestore (serialisable Map list)
+      // 1. Try uploading to Firebase Storage (user-scoped path)
+      try {
+        final fileName =
+            'users/${user.uid}/designs/${DateTime.now().millisecondsSinceEpoch}.png';
+        final ref = FirebaseStorage.instance.ref().child(fileName);
+        final snapshot = await ref.putData(
+          _generatedSketch!,
+          SettableMetadata(contentType: 'image/png'),
+        );
+        downloadUrl = await snapshot.ref.getDownloadURL();
+      } catch (e) {
+        debugPrint("Storage upload failed, using base64 fallback: $e");
+      }
+
+      // 2. If Storage failed, compress + base64-encode as fallback
+      if (downloadUrl == null) {
+        try {
+          final decoded = img.decodeImage(_generatedSketch!);
+          if (decoded != null) {
+            final resized = img.copyResize(decoded, width: 400);
+            final compressed = img.encodeJpg(resized, quality: 75);
+            sketchBase64 = base64Encode(compressed);
+          }
+        } catch (e) {
+          debugPrint("Base64 fallback encoding failed: $e");
+        }
+      }
+
+      // 3. Build color list for Firestore — use Map keys, not integer index
       final colorsData = dominantColors
           .take(5)
-          .map((c) => {'r': c[0], 'g': c[1], 'b': c[2]})
+          .map((c) => {'r': c['r'] ?? 0, 'g': c['g'] ?? 0, 'b': c['b'] ?? 0})
           .toList();
 
-      // 3. Save metadata to generated_designs (what library reads)
+      // 4. Save metadata to generated_designs (what library reads)
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('generated_designs')
           .add({
-        'imageUrl': downloadUrl, // storage URL – no size limit
+        if (downloadUrl != null) 'imageUrl': downloadUrl,
+        if (sketchBase64 != null) 'sketchBase64': sketchBase64,
         'timestamp': FieldValue.serverTimestamp(),
         'style': _selectedStyle,
         'gender': _selectedGender,
@@ -692,22 +753,30 @@ class _ScanPageState extends State<ScanPage>
         'colors': colorsData,
       });
 
+      // 5. Show success dialog with the sketch image visible
       if (mounted) {
-        CustomModernAlert.show(
+        // ignore: use_build_context_synchronously
+        await CustomModernAlert.showAndAwait(
           context: context,
           type: CustomAlertType.success,
-          title: 'Saved!',
-          message: 'Fashion sketch added to your library.',
+          title: 'Saved to Collection!',
+          message: 'Your AI design has been stored in My Collection under AI Designs.',
+          btnText: 'VIEW COLLECTION',
+          imageBytes: _generatedSketch,
+          onBtnTap: () {
+            Navigator.of(context).pop();
+            widget.onHistoryTap?.call();
+          },
         );
       }
     } catch (e) {
       if (mounted) {
-          CustomModernAlert.show(
-            context: context,
-            type: CustomAlertType.error,
-            title: 'Save Failed',
-            message: e.toString(),
-          );
+        CustomModernAlert.show(
+          context: context,
+          type: CustomAlertType.error,
+          title: 'Save Failed',
+          message: e.toString(),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSavingSketch = false);

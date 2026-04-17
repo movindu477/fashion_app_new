@@ -2,15 +2,50 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Allow authenticated users to upload and view files
-    // This is a basic rule. For better security, you might want to restrict:
-    // match /fabric_analyses/{userId}/{fileName} {
-    //   allow read, write: if request.auth != null && request.auth.uid == userId;
-    // }
-    
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * 1. USER FABRIC UPLOADS
+     *    Path used by the app: users/{userId}/fabrics/{fileName}
+     *
+     *    Rule: only the authenticated owner can upload or view their own files.
+     *    Max file size: 10 MB  (10 * 1024 * 1024 bytes)
+     *    Allowed types: image/jpeg, image/png, image/webp
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    match /users/{userId}/fabrics/{fileName} {
+      allow read:  if request.auth != null
+                   && request.auth.uid == userId;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * 2. USER AI DESIGN / SKETCH UPLOADS
+     *    Path used by the Stability AI sketch save flow.
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    match /users/{userId}/designs/{fileName} {
+      allow read:  if request.auth != null
+                   && request.auth.uid == userId;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * 3. GLOBAL FALLBACK — deny everything else
+     * ─────────────────────────────────────────────────────────────────────────
+     */
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

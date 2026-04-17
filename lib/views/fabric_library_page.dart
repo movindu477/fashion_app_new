@@ -142,7 +142,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
       String docId, String collection) {
     final isDesign = collection == 'generated_designs';
     final imageUrl = data['imageUrl'] as String?; // Firebase Storage URL
-    final imageBase64 = data['imageBase64'] as String?; // legacy
+    final imageBase64 = data['imageBase64'] as String?; // scanned fabric base64
+    final sketchBase64 = data['sketchBase64'] as String?; // AI design base64
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
     
@@ -185,16 +186,18 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                           color: Colors.white12, size: 30),
                     ),
                   )
-                : (imageBase64 != null
-                    ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
-                    : (fabricBase64 != null
-                        ? Image.memory(base64Decode(fabricBase64), fit: BoxFit.cover)
-                        : (imagePath != null && File(imagePath).existsSync()
-                            ? Image.file(File(imagePath), fit: BoxFit.cover)
-                            : Container(
-                                color: Colors.black26,
-                                child: const Icon(Icons.style_rounded,
-                                    color: Colors.white12))))),
+                : (sketchBase64 != null
+                    ? Image.memory(base64Decode(sketchBase64), fit: BoxFit.cover)
+                    : (imageBase64 != null
+                        ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
+                        : (fabricBase64 != null
+                            ? Image.memory(base64Decode(fabricBase64), fit: BoxFit.cover)
+                            : (imagePath != null && File(imagePath).existsSync()
+                                ? Image.file(File(imagePath), fit: BoxFit.cover)
+                                : Container(
+                                    color: Colors.black26,
+                                    child: const Icon(Icons.style_rounded,
+                                        color: Colors.white12)))))),
 
             // Overlay
             Positioned.fill(
