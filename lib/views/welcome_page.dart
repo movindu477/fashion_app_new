@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'login.dart';
+import 'auth_landing_page.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -60,7 +60,7 @@ class _WelcomePageState extends State<WelcomePage> {
       context,
       PageTransition(
         type: PageTransitionType.fade,
-        child: const LoginPage(),
+        child: const AuthLandingPage(),
         duration: const Duration(milliseconds: 1000),
         curve: Curves.easeInOut,
       ),

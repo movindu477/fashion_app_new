@@ -69,11 +69,12 @@ flutter:
     - assets/images/main6ori.jpg
     - assets/images/main7.jpg
     - assets/images/main8.jpg
-    - assets/images/login.jpg
+    - assets/images/google.jpg
+    - assets/images/login1.jpg
     - assets/images/login.webp
-    - assets/images/register.jpg
-    - assets/images/login2.png
+    - assets/images/register1.jpg
     - assets/images/register2.png
+    - assets/images/image1.jpg
     - assets/images/hello.jpg
     - assets/images/hello2.jpg
     - assets/images/hello3.jpg
