@@ -38,32 +38,32 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             expandedHeight: 160.0,
             floating: false,
             pinned: true,
-            backgroundColor: const Color(0xFF0F0F0F),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 60),
               title: Text(
                 "My Collection",
                 style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 24,
                   letterSpacing: -0.5,
                 ),
               ),
-              background: Container(color: const Color(0xFF0F0F0F)),
+              background: Container(color: Theme.of(context).scaffoldBackgroundColor),
             ),
             bottom: TabBar(
               controller: _tabController,
               indicatorColor: const Color(0xFFFF5200),
               labelColor: const Color(0xFFFF5200),
-              unselectedLabelColor: Colors.white38,
+              unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
               indicatorWeight: 3,
               labelStyle: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, ),
               tabs: const [
@@ -110,7 +110,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 Text(
                   "No items found here",
                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 18,
                       ),
                 ),
@@ -157,8 +157,8 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          color: const Color(0xFF1A1A1A),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -296,6 +296,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
     final colors = _parseColors(data['dominantColors'] ?? data['colors']);
     final imageUrl = data['imageUrl'] as String?;
     final sketchBase64 = data['sketchBase64'] as String?;
+    final imageBase64 = data['imageBase64'] as String?; // Fixed: missing base64 support
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
     final designConcept = data['designConcept'] as String?;
@@ -309,22 +310,31 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (_, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF121212),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           child: ListView(
             controller: scrollController,
             children: [
-              Center(
-                  child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(10)))),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: SizedBox(
@@ -341,12 +351,18 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                       : (sketchBase64 != null
                           ? Image.memory(base64Decode(sketchBase64),
                               fit: BoxFit.cover)
-                          : (fabricBase64 != null
-                              ? Image.memory(base64Decode(fabricBase64),
+                          : (imageBase64 != null
+                              ? Image.memory(base64Decode(imageBase64),
                                   fit: BoxFit.cover)
-                              : (imagePath != null && File(imagePath).existsSync()
-                                  ? Image.file(File(imagePath), fit: BoxFit.cover)
-                                  : Container(color: Colors.black26)))),
+                              : (fabricBase64 != null
+                                  ? Image.memory(base64Decode(fabricBase64),
+                                      fit: BoxFit.cover)
+                                  : (imagePath != null && File(imagePath).existsSync()
+                                      ? Image.file(File(imagePath), fit: BoxFit.cover)
+                                      : Container(
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                                          child: Icon(Icons.info_outline, size: 60, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
+                                        ))))),
                 ),
               ),
               const SizedBox(height: 24),
@@ -363,7 +379,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                     ? (data['style'] ?? "Custom Design")
                     : (data['suggestedUse'] ?? "Unknown Fabric"),
                 style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 28,
                     height: 1.1),
               ),
@@ -377,12 +393,12 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                 const SizedBox(height: 8),
                 Text(designConcept,
                     style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                        color: Colors.white70, fontSize: 14, height: 1.6)),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 14, height: 1.6)),
                 const SizedBox(height: 24),
               ],
               Text("Color Palette",
                   style: TextStyle(fontFamily: 'Poppins', 
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 18,
                       fontWeight: FontWeight.w400)),
               const SizedBox(height: 16),
@@ -393,7 +409,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                     .map((color) => Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E1E),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), // Dynamic background
                               borderRadius: BorderRadius.circular(16)),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -407,7 +423,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                               Text(
                                   '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
                                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontSize: 12)),
                             ],
                           ),

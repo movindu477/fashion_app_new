@@ -95,22 +95,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
     // Given the phrasing "come from left side...", a page transition is best.
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Edit Profile",
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 22,
             letterSpacing: -0.5,
           ),
         ),
-        backgroundColor: const Color(0xFF0F0F0F),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
       ),
@@ -125,7 +125,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               Text(
                 "Personal Information",
                 style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   letterSpacing: -0.3,
                 ),
@@ -186,7 +186,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: Text(
             label,
             style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-              color: Colors.white38,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
               fontSize: 12,
             ),
           ),
@@ -194,22 +194,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white, fontSize: 16),
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon,
                 color: const Color(0xFFFF5200).withValues(alpha: 0.7),
                 size: 22),
             filled: true,
-            fillColor: const Color(0xFF1A1A1A),
+            fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide:
-                  BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+                  BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide:
-                  BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+                  BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),

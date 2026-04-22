@@ -143,9 +143,13 @@ class _ScanPageState extends State<ScanPage>
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF161616),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.05)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -161,15 +165,22 @@ class _ScanPageState extends State<ScanPage>
             const SizedBox(height: 24),
             Text(
               "Select Image Source",
-              style: TextStyle(fontFamily: 'Poppins', color: Colors.white,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 20,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               "Capturing fabric texture directly works best",
-              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                color: Colors.white38,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w400,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.38),
                 fontSize: 13,
               ),
             ),
@@ -214,7 +225,11 @@ class _ScanPageState extends State<ScanPage>
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.05)),
         ),
         child: Column(
           children: [
@@ -222,8 +237,9 @@ class _ScanPageState extends State<ScanPage>
             const SizedBox(height: 12),
             Text(
               title,
-              style: TextStyle(fontFamily: 'Poppins', 
-                color: Colors.white,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
@@ -299,7 +315,8 @@ class _ScanPageState extends State<ScanPage>
             context: context,
             type: CustomAlertType.error,
             title: 'Not Recognized',
-            message: 'This does not appear to be a fabric surface! Please capture a clear textile or fabric.',
+            message:
+                'This does not appear to be a fabric surface! Please capture a clear textile or fabric.',
           );
         }
         setState(() {
@@ -370,7 +387,8 @@ class _ScanPageState extends State<ScanPage>
           context: context,
           type: CustomAlertType.success,
           title: 'Saved to Collection!',
-          message: 'Your scanned fabric has been stored in My Collection under Scanned Fabrics.',
+          message:
+              'Your scanned fabric has been stored in My Collection under Scanned Fabrics.',
           btnText: 'VIEW COLLECTION',
           imageBytes: fabricImageBytes,
           onBtnTap: () {
@@ -576,7 +594,9 @@ class _ScanPageState extends State<ScanPage>
                     child: Center(
                       child: Text(
                         "Pinch to zoom · Tap × to close",
-                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
                           color: Colors.white38,
                           fontSize: 12,
                         ),
@@ -678,7 +698,8 @@ class _ScanPageState extends State<ScanPage>
               const SizedBox(width: 4),
               Text(
                 "$credits Credits",
-                style: TextStyle(fontFamily: 'Poppins', 
+                style: TextStyle(
+                  fontFamily: 'Poppins',
                   color: const Color(0xFFFF5200),
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
@@ -760,7 +781,8 @@ class _ScanPageState extends State<ScanPage>
           context: context,
           type: CustomAlertType.success,
           title: 'Saved to Collection!',
-          message: 'Your AI design has been stored in My Collection under AI Designs.',
+          message:
+              'Your AI design has been stored in My Collection under AI Designs.',
           btnText: 'VIEW COLLECTION',
           imageBytes: _generatedSketch,
           onBtnTap: () {
@@ -844,7 +866,7 @@ class _ScanPageState extends State<ScanPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
@@ -857,8 +879,10 @@ class _ScanPageState extends State<ScanPage>
               children: [
                 Text(
                   "Fabric Scanner",
-                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                    color: Colors.white,
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 32,
                     letterSpacing: -1,
                   ),
@@ -867,7 +891,11 @@ class _ScanPageState extends State<ScanPage>
             ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2, end: 0),
             Text(
               "AI-powered textile analysis",
-              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white54, fontSize: 14),
+              style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white54,
+                  fontSize: 14),
             ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
             const SizedBox(height: 30),
 
@@ -930,7 +958,8 @@ class _ScanPageState extends State<ScanPage>
                           children: [
                             Text(
                               "Tap to\nScan Fabric",
-                              style: TextStyle(fontFamily: 'Poppins', 
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
                                 color: Colors.white,
                                 fontSize: 32,
                                 fontWeight: FontWeight.w400,
@@ -1013,7 +1042,7 @@ class _ScanPageState extends State<ScanPage>
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(32),
                   border:
                       Border.all(color: Colors.white.withValues(alpha: 0.05)),
@@ -1023,8 +1052,10 @@ class _ScanPageState extends State<ScanPage>
                   children: [
                     Text(
                       "Select Design Style",
-                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                        color: Colors.white70,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -1049,7 +1080,7 @@ class _ScanPageState extends State<ScanPage>
                               labelStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                 color: Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                               selectedColor: const Color(0xFFFF5200),
@@ -1068,8 +1099,9 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Garment Type",
-                      style: TextStyle(fontFamily: 'Poppins', 
-                        color: Colors.white70,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -1094,7 +1126,7 @@ class _ScanPageState extends State<ScanPage>
                               labelStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                               selectedColor: const Color(0xFFFF5200),
@@ -1113,10 +1145,11 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Target Gender",
-                      style: TextStyle(fontFamily: 'Poppins', 
-                        color: Colors.white70,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
-                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SingleChildScrollView(
@@ -1138,7 +1171,7 @@ class _ScanPageState extends State<ScanPage>
                               labelStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                               selectedColor: const Color(0xFFFF5200),
@@ -1159,7 +1192,7 @@ class _ScanPageState extends State<ScanPage>
                       "Best for Occasion",
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        color: Colors.white70,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -1184,7 +1217,7 @@ class _ScanPageState extends State<ScanPage>
                               labelStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                               selectedColor: const Color(0xFFFF5200),
@@ -1205,7 +1238,7 @@ class _ScanPageState extends State<ScanPage>
                       "Fabric Material Type",
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        color: Colors.white70,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                       ),
@@ -1227,14 +1260,15 @@ class _ScanPageState extends State<ScanPage>
                                   _updateAutoPrompt();
                                 }
                               },
-                              labelStyle: const TextStyle(
+                              labelStyle: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                               ),
                               selectedColor: const Color(0xFFFF5200),
-                              backgroundColor: Colors.white.withValues(alpha: 0.05),
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.05),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -1248,7 +1282,8 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 24),
                     Text(
                       "Designer Instructions (Optional)",
-                      style: TextStyle(fontFamily: 'Poppins', 
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
                         color: Colors.white70,
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -1258,14 +1293,19 @@ class _ScanPageState extends State<ScanPage>
                     TextField(
                       controller: _promptController,
                       maxLines: 8, // Increased height
-                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                          color: Colors.white, fontSize: 14),
+                      style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 14),
                       decoration: InputDecoration(
                         hintText: "e.g. Minimalist silhouette for summer...",
-                        hintStyle: TextStyle(fontFamily: 'Poppins', 
-                            color: Colors.white24, fontSize: 13),
+                        hintStyle: TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                            fontSize: 13),
                         filled: true,
-                        fillColor: Colors.black.withValues(alpha: 0.2),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
@@ -1314,8 +1354,10 @@ class _ScanPageState extends State<ScanPage>
                                       size: 20),
                                   const SizedBox(width: 10),
                                   Text(
-                                    "Generate AI Design Concept",
-                                    style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                    "Generate AI Design",
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontWeight: FontWeight.w400,
                                       fontSize: 16,
                                       letterSpacing: -0.2,
                                     ),
@@ -1340,7 +1382,7 @@ class _ScanPageState extends State<ScanPage>
                   key: _designResultKey,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
                         color: const Color(0xFFFF5200).withValues(alpha: 0.1)),
@@ -1372,7 +1414,9 @@ class _ScanPageState extends State<ScanPage>
                               ),
                               child: Text(
                                 _selectedStyle.toUpperCase(),
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
                                   color: const Color(0xFFFF5200),
                                   fontSize: 12,
                                   letterSpacing: 1,
@@ -1388,7 +1432,9 @@ class _ScanPageState extends State<ScanPage>
                       const SizedBox(height: 20),
                       Text(
                         "Designer's Concept",
-                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
                           color: Colors.white,
                           fontSize: 20,
                         ),
@@ -1398,8 +1444,10 @@ class _ScanPageState extends State<ScanPage>
                         _generatedDesignConcept != null
                             ? _getPureDesignText(_generatedDesignConcept!)
                             : "No description available",
-                        style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                          color: Colors.white70,
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: 14,
                           height: 1.6,
                         ),
@@ -1408,7 +1456,8 @@ class _ScanPageState extends State<ScanPage>
                       // Added: Used Colors for reference
                       Text(
                         "Captured Colors Used",
-                        style: TextStyle(fontFamily: 'Poppins', 
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
                           color: Colors.white54,
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
@@ -1446,7 +1495,9 @@ class _ScanPageState extends State<ScanPage>
                                 const SizedBox(width: 8),
                                 Text(
                                   hex,
-                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
                                     color: Colors.white.withValues(alpha: 0.8),
                                     fontSize: 11,
                                   ),
@@ -1518,16 +1569,20 @@ class _ScanPageState extends State<ScanPage>
                             children: [
                               Text(
                                 "AI Fashion Sketch",
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontSize: 22,
                                   letterSpacing: -0.5,
                                 ),
                               ),
                               Text(
                                 "Powered by Stability AI",
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                                  color: Colors.white38,
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                                   fontSize: 11,
                                 ),
                               ),
@@ -1589,7 +1644,8 @@ class _ScanPageState extends State<ScanPage>
                                         const SizedBox(width: 4),
                                         Text(
                                           "Tap to expand",
-                                          style: TextStyle(fontFamily: 'Poppins', 
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
                                             color: Colors.white70,
                                             fontSize: 10,
                                           ),
@@ -1629,7 +1685,9 @@ class _ScanPageState extends State<ScanPage>
                                   _isGeneratingSketch
                                       ? "Generating..."
                                       : "Regenerate",
-                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1655,7 +1713,9 @@ class _ScanPageState extends State<ScanPage>
                                     size: 18),
                                 label: Text(
                                   "Save to Library",
-                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1707,7 +1767,9 @@ class _ScanPageState extends State<ScanPage>
                               const SizedBox(height: 20),
                               Text(
                                 "Your Sketch Awaits",
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white,
                                   fontSize: 20,
                                 ),
@@ -1716,7 +1778,9 @@ class _ScanPageState extends State<ScanPage>
                               Text(
                                 "Tap below to generate a\nprofessional fashion illustration",
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
                                   color: Colors.white38,
                                   fontSize: 13,
                                   height: 1.5,
@@ -1746,7 +1810,8 @@ class _ScanPageState extends State<ScanPage>
                               _isGeneratingSketch
                                   ? "Generating Sketch..."
                                   : "Create Fashion Sketch",
-                              style: TextStyle(fontFamily: 'Poppins', 
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
                                 fontWeight: FontWeight.w400,
                                 fontSize: 16,
                               ),
@@ -1781,10 +1846,10 @@ class _ScanPageState extends State<ScanPage>
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 30,
             offset: const Offset(0, 10),
           )
@@ -1794,13 +1859,16 @@ class _ScanPageState extends State<ScanPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 24, top: 24, right: 24, bottom: 16),
+            padding:
+                const EdgeInsets.only(left: 24, top: 24, right: 24, bottom: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   "Captured Fabric",
-                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w400,
                     color: Colors.white,
                     fontSize: 20,
                   ),
@@ -1814,15 +1882,18 @@ class _ScanPageState extends State<ScanPage>
                       backgroundColor: const Color(0xFFFF5200),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Hero(
               tag: 'scan_result',
               child: ClipRRect(
@@ -1850,12 +1921,16 @@ class _ScanPageState extends State<ScanPage>
       key: _resultsKey,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: const Color(0xFF161616),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 40,
             offset: const Offset(0, 20),
           )
@@ -1868,10 +1943,12 @@ class _ScanPageState extends State<ScanPage>
             children: [
               Text(
                 _isAnalyzing ? "Analyzing material..." : "Material Identified",
-                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                    color: Colors.white,
-                    fontSize: 18,
-                    ),
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
               ),
             ],
           ),
@@ -1881,15 +1958,17 @@ class _ScanPageState extends State<ScanPage>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: _classificationResult!.color.withOpacity(0.1),
+                color: _classificationResult!.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: _classificationResult!.color.withOpacity(0.3)),
+                    color: _classificationResult!.color.withValues(alpha: 0.3)),
               ),
               child: Text(
                 _classificationResult!.message,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w400,
                   color: _classificationResult!.color,
                   fontSize: 14,
                   letterSpacing: 0.5,
@@ -1908,7 +1987,10 @@ class _ScanPageState extends State<ScanPage>
                     child: CircularProgressIndicator(
                       value: 1,
                       strokeWidth: 16,
-                      color: Colors.white.withOpacity(0.03),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.03),
                     ),
                   ),
                   Positioned.fill(
@@ -1933,11 +2015,14 @@ class _ScanPageState extends State<ScanPage>
                     ),
                   ),
                   if (_isAnalyzing)
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: CircularProgressIndicator(
                         strokeWidth: 16,
                         strokeCap: StrokeCap.round,
-                        color: Colors.white24,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.1),
                       ),
                     )
                         .animate(onPlay: (c) => c.repeat())
@@ -1950,17 +2035,24 @@ class _ScanPageState extends State<ScanPage>
                           _isAnalyzing
                               ? "..."
                               : "${confidencePercent.toStringAsFixed(1)}%",
-                          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                              color: Colors.white,
+                          style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 36,
                               letterSpacing: -1),
                         ),
                         Text(
                           _isAnalyzing ? "Processing" : "Confidence",
-                          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                              color: Colors.white38,
-                              fontSize: 12,
-                              ),
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w400,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.38),
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -1998,10 +2090,15 @@ class _ScanPageState extends State<ScanPage>
             // Re-adding the color palette here for accessibility
             Text(
               "Detected Palette",
-              style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                  color: Colors.white70,
-                  fontSize: 13,
-                  ),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w400,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -2018,12 +2115,15 @@ class _ScanPageState extends State<ScanPage>
                         color: color,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.2),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: color.withOpacity(0.3),
+                            color: color.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )
@@ -2033,8 +2133,13 @@ class _ScanPageState extends State<ScanPage>
                     const SizedBox(height: 8),
                     Text(
                       hex,
-                      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                        color: Colors.white54,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.38),
                         fontSize: 10,
                       ),
                     ),
@@ -2052,9 +2157,13 @@ class _ScanPageState extends State<ScanPage>
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2068,16 +2177,23 @@ class _ScanPageState extends State<ScanPage>
                       BoxDecoration(color: color, shape: BoxShape.circle)),
               const SizedBox(width: 8),
               Text(label,
-                  style:
-                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 11)),
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.38),
+                      fontSize: 11)),
             ],
           ),
           const SizedBox(height: 10),
           Text(value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: 'Poppins', 
-                  color: Colors.white,
+              style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w400)),
         ],
@@ -2088,8 +2204,12 @@ class _ScanPageState extends State<ScanPage>
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-          color: Colors.white, fontSize: 20, ),
+      style: TextStyle(
+        fontFamily: 'Poppins',
+        fontWeight: FontWeight.w400,
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 20,
+      ),
     );
   }
 
@@ -2101,9 +2221,13 @@ class _ScanPageState extends State<ScanPage>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.05)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2111,12 +2235,20 @@ class _ScanPageState extends State<ScanPage>
               Icon(icon, color: const Color(0xFFFF5200), size: 28),
               const Spacer(),
               Text(title,
-                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                      color: Colors.white,
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16)),
               Text(subtitle,
-                  style:
-                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 12)),
+                  style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.38),
+                      fontSize: 12)),
             ],
           ),
         ),

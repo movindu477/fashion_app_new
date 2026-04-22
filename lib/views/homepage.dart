@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -167,7 +167,7 @@ class _HomeViewState extends State<HomeView>
           });
         }
       } catch (e) {
-        print("Error fetching user: $e");
+        debugPrint("Error fetching user: $e");
       }
     }
   }
@@ -191,7 +191,7 @@ class _HomeViewState extends State<HomeView>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         // Padding moved from top-level to children individual sections
@@ -254,40 +254,31 @@ class _HomeViewState extends State<HomeView>
                                     homepageState._onTabTapped(3);
                                   }
                                 },
-                                child: Container(
+                                child: Hero(
+                                  tag: 'profile_avatar',
+                                  child: Container(
                                   padding: const EdgeInsets.all(3),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFFF5200),
-                                        Color(0xFFE64A19)
-                                      ],
+                                    border: Border.all(
+                                      color: const Color(0xFFFF5200),
+                                      width: 2,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF5200)
-                                            .withValues(alpha: 0.3),
-                                        blurRadius: 15,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
                                   ),
                                   child: CircleAvatar(
                                     radius: 28,
-                                    backgroundColor: const Color(0xFF1A1A1A),
-                                    backgroundImage: _userData?['photoUrl'] !=
-                                            null
-                                        ? NetworkImage(_userData?['photoUrl'])
+                                    backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                                    backgroundImage: (_userData?['photoUrl'] ?? _user?.photoURL) != null
+                                        ? NetworkImage(_userData?['photoUrl'] ?? _user!.photoURL!)
                                         : null,
-                                    child: _userData?['photoUrl'] == null
-                                        ? const Icon(Icons.person_rounded,
-                                            color: Colors.white70, size: 28)
+                                    child: (_userData?['photoUrl'] ?? _user?.photoURL) == null
+                                        ? Icon(Icons.person_rounded,
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), size: 28)
                                         : null,
+                                    ),
                                   ),
                                 ),
                               ).animate().scale(
-                                  delay: 200.ms,
                                   duration: 600.ms,
                                   curve: Curves.easeOutBack),
                               const SizedBox(width: 18),
@@ -301,10 +292,10 @@ class _HomeViewState extends State<HomeView>
                                           horizontal: 10, vertical: 5),
                                       decoration: BoxDecoration(
                                         color:
-                                            Colors.white.withValues(alpha: 0.1),
+                                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                            color: Colors.white
+                                            color: Theme.of(context).colorScheme.onSurface
                                                 .withValues(alpha: 0.08)),
                                       ),
                                       child: Row(
@@ -425,10 +416,10 @@ class _HomeViewState extends State<HomeView>
                           end: Alignment.bottomRight,
                         ),
                       ),
-                      child: Column(
+                      child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             "Design Your\nFuture Today",
                             style: TextStyle(
                               fontFamily: 'Poppins',
@@ -438,8 +429,8 @@ class _HomeViewState extends State<HomeView>
                               height: 1.0,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: 16),
+                          Text(
                             "Transform any fabric into a professional fashion silhouette with our AI engine.",
                             style: TextStyle(
                               fontFamily: 'Poppins',
@@ -596,9 +587,9 @@ class _HomeViewState extends State<HomeView>
                     height: 180,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(32),
-                      color: const Color(0xFF1A1A1A),
+                      color: Theme.of(context).colorScheme.surfaceContainerLowest,
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.05)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                     ),
                     child: Row(
                       children: [
@@ -634,7 +625,7 @@ class _HomeViewState extends State<HomeView>
                                   style: TextStyle(
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w400,
-                                    color: Colors.white,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontSize: 20,
                                   ),
                                 ),
@@ -684,7 +675,7 @@ class _HomeViewState extends State<HomeView>
           title,
           style: TextStyle(
             fontFamily: 'Poppins',
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 20,
             fontWeight: FontWeight.w400,
             letterSpacing: -0.5,
@@ -709,27 +700,35 @@ class _HomeViewState extends State<HomeView>
 
   Widget _buildQuickAction(
       String title, IconData icon, Color color, VoidCallback onTap) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           height: 145, // Slightly taller for premium spacing
           decoration: BoxDecoration(
-            color: const Color(0xFF161616), // Deeper base for contrast
+            color: isDark 
+                ? Theme.of(context).colorScheme.surfaceContainerLow 
+                : color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(36),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1) 
+                  : color.withValues(alpha: 0.12),
               width: 0.8,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
+                color: isDark 
+                    ? Colors.black.withValues(alpha: 0.3) 
+                    : color.withValues(alpha: 0.1),
+                blurRadius: isDark ? 20 : 15,
                 offset: const Offset(0, 10),
               ),
               // Subtle inner glow matching the theme color
               BoxShadow(
-                color: color.withValues(alpha: 0.03),
+                color: color.withValues(alpha: isDark ? 0.03 : 0.05),
                 blurRadius: 40,
                 spreadRadius: -20,
                 offset: const Offset(0, 5),
@@ -739,8 +738,8 @@ class _HomeViewState extends State<HomeView>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF1C1C1C),
-                color.withValues(alpha: 0.06),
+                isDark ? const Color(0xFF1C1C1C) : color.withValues(alpha: 0.3),
+                color.withValues(alpha: isDark ? 0.06 : 0.45),
               ],
             ),
           ),
@@ -756,7 +755,7 @@ class _HomeViewState extends State<HomeView>
                     width: 70,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.05),
+                      color: color.withValues(alpha: isDark ? 0.05 : 0.1),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -771,15 +770,17 @@ class _HomeViewState extends State<HomeView>
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
+                          color: isDark 
+                              ? color.withValues(alpha: 0.1) 
+                              : Colors.white.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                            color: color.withValues(alpha: 0.15),
+                            color: color.withValues(alpha: isDark ? 0.15 : 0.1),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: color.withValues(alpha: 0.08),
+                              color: color.withValues(alpha: isDark ? 0.08 : 0.12),
                               blurRadius: 10,
                               spreadRadius: -4,
                             ),
@@ -798,11 +799,13 @@ class _HomeViewState extends State<HomeView>
                           Expanded(
                             child: Text(
                               title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontWeight: FontWeight
                                     .w500, // Medium for better legibility
-                                color: Colors.white,
+                                color: isDark 
+                                    ? Theme.of(context).colorScheme.onSurface 
+                                    : Colors.black.withValues(alpha: 0.8),
                                 fontSize: 15,
                                 letterSpacing: -0.4,
                               ),
@@ -811,12 +814,12 @@ class _HomeViewState extends State<HomeView>
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.04),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.arrow_forward_ios_rounded,
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: isDark ? 0.3 : 0.5),
                               size: 10,
                             ),
                           ),

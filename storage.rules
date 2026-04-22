@@ -7,10 +7,6 @@ service firebase.storage {
      * ─────────────────────────────────────────────────────────────────────────
      * 1. USER FABRIC UPLOADS
      *    Path used by the app: users/{userId}/fabrics/{fileName}
-     *
-     *    Rule: only the authenticated owner can upload or view their own files.
-     *    Max file size: 10 MB  (10 * 1024 * 1024 bytes)
-     *    Allowed types: image/jpeg, image/png, image/webp
      * ─────────────────────────────────────────────────────────────────────────
      */
     match /users/{userId}/fabrics/{fileName} {
@@ -26,7 +22,6 @@ service firebase.storage {
     /**
      * ─────────────────────────────────────────────────────────────────────────
      * 2. USER AI DESIGN / SKETCH UPLOADS
-     *    Path used by the Stability AI sketch save flow.
      * ─────────────────────────────────────────────────────────────────────────
      */
     match /users/{userId}/designs/{fileName} {
@@ -41,7 +36,22 @@ service firebase.storage {
 
     /**
      * ─────────────────────────────────────────────────────────────────────────
-     * 3. GLOBAL FALLBACK — deny everything else
+     * 3. USER PROFILE PICTURES
+     *    Path used by profile_page.dart: user_profiles/{userId}/{fileName}
+     * ─────────────────────────────────────────────────────────────────────────
+     */
+    match /user_profiles/{userId}/{fileName} {
+      allow read:  if request.auth != null; // Everyone can see profiles
+      
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024 // 5 MB max for profiles
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    /**
+     * ─────────────────────────────────────────────────────────────────────────
+     * 4. GLOBAL FALLBACK — deny everything else
      * ─────────────────────────────────────────────────────────────────────────
      */
     match /{allPaths=**} {

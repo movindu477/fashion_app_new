@@ -214,120 +214,135 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           ),
 
           // ── Layer 2: title + bottom card ──────────────────────────────────
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Hero title on the image
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Text(
-                    key: ValueKey(_isLogin),
-                    _isLogin ? 'Welcome Back!' : 'Join Us Today!',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Color(0x66000000),
-                          blurRadius: 12,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              // White card
-              Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 24,
-                      offset: Offset(0, -6),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(24, 22, 24, bottomPad + 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildTabSwitcher().animate().fadeIn(delay: 80.ms),
-                      const SizedBox(height: 14),
-                      AnimatedCrossFade(
-                        firstChild: Form(
-                          key: _loginFormKey,
-                          child: _buildLoginFields(),
-                        ),
-                        secondChild: Form(
-                          key: _regFormKey,
-                          child: _buildRegisterFields(),
-                        ),
-                        crossFadeState: _isLogin
-                            ? CrossFadeState.showFirst
-                            : CrossFadeState.showSecond,
-                        duration: const Duration(milliseconds: 350),
-                        firstCurve: Curves.easeInOut,
-                        secondCurve: Curves.easeInOut,
-                        sizeCurve: Curves.easeInOut,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildGradientButton(
-                        text: _isLogin ? 'Log In' : 'Sign Up',
-                        onTap: _isLogin ? _handleSubmit : _onRegisterPressed,
-                        loading: _loading,
-                      ),
-                      const SizedBox(height: 14),
-                      _buildDivider(),
-                      const SizedBox(height: 14),
-                      _buildGoogleButton(onTap: _handleGoogleSignIn),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () => _switchTab(!_isLogin),
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 13,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: _isLogin
-                                      ? "Don't have an account? "
-                                      : "Already have an account? ",
-                                  style: const TextStyle(
-                                      color: Color(0xFF888888)),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const SizedBox(height: 60), // Space at top for image visibility
+                          // Hero title on the image
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: Text(
+                                key: ValueKey(_isLogin),
+                                _isLogin ? 'Welcome Back!' : 'Join Us Today!',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      color: Color(0x66000000),
+                                      blurRadius: 12,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                TextSpan(
-                                  text: _isLogin ? 'Sign Up' : 'Log In',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFF5200),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // White card
+                          Container(
+                            width: double.infinity,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x22000000),
+                                  blurRadius: 24,
+                                  offset: Offset(0, -6),
                                 ),
                               ],
                             ),
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(24, 22, 24, bottomPad + 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildTabSwitcher().animate().fadeIn(delay: 80.ms),
+                                  const SizedBox(height: 14),
+                                  AnimatedCrossFade(
+                                    firstChild: Form(
+                                      key: _loginFormKey,
+                                      child: _buildLoginFields(),
+                                    ),
+                                    secondChild: Form(
+                                      key: _regFormKey,
+                                      child: _buildRegisterFields(),
+                                    ),
+                                    crossFadeState: _isLogin
+                                        ? CrossFadeState.showFirst
+                                        : CrossFadeState.showSecond,
+                                    duration: const Duration(milliseconds: 350),
+                                    firstCurve: Curves.easeInOut,
+                                    secondCurve: Curves.easeInOut,
+                                    sizeCurve: Curves.easeInOut,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildGradientButton(
+                                    text: _isLogin ? 'Log In' : 'Sign Up',
+                                    onTap: _isLogin ? _handleSubmit : _onRegisterPressed,
+                                    loading: _loading,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  _buildDivider(),
+                                  const SizedBox(height: 14),
+                                  _buildGoogleButton(onTap: _handleGoogleSignIn),
+                                  const SizedBox(height: 16),
+                                  Center(
+                                    child: GestureDetector(
+                                      onTap: () => _switchTab(!_isLogin),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: const TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 14,
+                                            color: Color(0xFF666666),
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: _isLogin
+                                                  ? "Don't have an account? "
+                                                  : "Already have an account? ",
+                                            ),
+                                            TextSpan(
+                                              text: _isLogin ? "Sign Up" : "Log In",
+                                              style: const TextStyle(
+                                                color: Color(0xFFFF5200),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
 
           // ── Layer 3: back button ───────────────────────────────────────

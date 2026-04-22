@@ -9,6 +9,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'views/welcome_page.dart';
 import 'services/fabric_classifier_service.dart';
+import 'package:provider/provider.dart';
+import 'theme/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +23,12 @@ void main() async {
     debugPrint('Initialization error: $e');
   }
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -29,30 +36,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Texora',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(fontWeight: FontWeight.w400),
-          displayMedium: TextStyle(fontWeight: FontWeight.w400),
-          displaySmall: TextStyle(fontWeight: FontWeight.w400),
-          headlineLarge: TextStyle(fontWeight: FontWeight.w400),
-          headlineMedium: TextStyle(fontWeight: FontWeight.w400),
-          headlineSmall: TextStyle(fontWeight: FontWeight.w400),
-          titleLarge: TextStyle(fontWeight: FontWeight.w400),
-          titleMedium: TextStyle(fontWeight: FontWeight.w400),
-          titleSmall: TextStyle(fontWeight: FontWeight.w400),
-          bodyLarge: TextStyle(fontWeight: FontWeight.w400),
-          bodyMedium: TextStyle(fontWeight: FontWeight.w400),
-          bodySmall: TextStyle(fontWeight: FontWeight.w400),
-          labelLarge: TextStyle(fontWeight: FontWeight.w400),
-          labelSmall: TextStyle(fontWeight: FontWeight.w400),
-        ),
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
-        useMaterial3: true,
-      ),
+      theme: AppThemes.lightTheme,
+      darkTheme: AppThemes.darkTheme,
+      themeMode: themeProvider.themeMode,
       home: const SplashScreen(),
     );
   }

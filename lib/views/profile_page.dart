@@ -11,6 +11,10 @@ import '../controllers/user_controller.dart';
 import '../models/user_model.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/custom_modern_alert.dart';
+import 'package:provider/provider.dart';
+import '../theme/theme_provider.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -76,28 +80,86 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _showImageSourceDialog() async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      builder: (context) => SafeArea(
-        child: Wrap(
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.black87),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndUploadImage(ImageSource.gallery);
-              },
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.black87),
-              title: const Text('Take a Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndUploadImage(ImageSource.camera);
-              },
+            const SizedBox(height: 24),
+            Text(
+              "Update Profile Photo",
+              style: TextStyle(fontFamily: 'Poppins', color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSourceCard(
+                    "Camera",
+                    Icons.camera_rounded,
+                    () {
+                      Navigator.pop(context);
+                      _pickAndUploadImage(ImageSource.camera);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildSourceCard(
+                    "Gallery",
+                    Icons.photo_library_rounded,
+                    () {
+                      Navigator.pop(context);
+                      _pickAndUploadImage(ImageSource.gallery);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFFFF5200), size: 32),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(fontFamily: 'Poppins', 
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ],
         ),
@@ -110,7 +172,29 @@ class _ProfilePageState extends State<ProfilePage>
     final pickedFile = await picker.pickImage(source: source);
 
     if (pickedFile != null && _userController.currentUser != null) {
-      final bytes = await pickedFile.readAsBytes();
+      // 1. Crop the Image
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Profile Picture',
+            toolbarColor: const Color(0xFF1A1A1A),
+            toolbarWidgetColor: const Color(0xFFFF5200),
+            initAspectRatio: CropAspectRatioPreset.square,
+            lockAspectRatio: true,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+            activeControlsWidgetColor: const Color(0xFFFF5200),
+          ),
+          IOSUiSettings(
+            title: 'Crop Profile Picture',
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+          ),
+        ],
+      );
+
+      if (croppedFile == null) return;
+
+      final bytes = await File(croppedFile.path).readAsBytes();
       setState(() {
         _localImageBytes = bytes;
         _isUploading = true;
@@ -118,13 +202,22 @@ class _ProfilePageState extends State<ProfilePage>
 
       try {
         final uid = _userController.currentUser!.uid;
-        String filePath = 'user_profiles/${uid}_profile.jpg';
+        // Use a unique name for each upload or overwrite the same file
+        String filePath = 'user_profiles/${uid}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        
+        // Use putFile with metadata for better reliability
         Reference ref = FirebaseStorage.instance.ref().child(filePath);
-        UploadTask uploadTask = ref.putData(bytes);
+        UploadTask uploadTask = ref.putFile(
+          File(croppedFile.path),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
         TaskSnapshot snapshot = await uploadTask;
         String downloadUrl = await snapshot.ref.getDownloadURL();
 
+        // 2. Update Firestore
         await _userController.updateUserData(uid, {'photoUrl': downloadUrl});
+        
+        // 3. Update Firebase Auth Profile
         await _userController.currentUser!.updatePhotoURL(downloadUrl);
 
         if (mounted) {
@@ -132,11 +225,24 @@ class _ProfilePageState extends State<ProfilePage>
             _localImageBytes = null;
           });
           await _fetchUserData();
+          
+          CustomModernAlert.show(
+            context: context,
+            type: CustomAlertType.success,
+            title: 'Success',
+            message: 'Profile image updated successfully.',
+          );
         }
       } catch (e) {
         debugPrint("Error uploading image: $e");
         if (mounted) {
           setState(() => _localImageBytes = null);
+          CustomModernAlert.show(
+            context: context,
+            type: CustomAlertType.error,
+            title: 'Upload Error',
+            message: 'Failed to upload profile photo.',
+          );
         }
       } finally {
         if (mounted) setState(() => _isUploading = false);
@@ -186,7 +292,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           CustomScrollView(
@@ -196,7 +302,7 @@ class _ProfilePageState extends State<ProfilePage>
                 expandedHeight: 140.0,
                 floating: false,
                 pinned: true,
-                backgroundColor: const Color(0xFF0F0F0F),
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 surfaceTintColor: Colors.transparent,
                 leadingWidth: 70,
                 automaticallyImplyLeading: false,
@@ -206,14 +312,14 @@ class _ProfilePageState extends State<ProfilePage>
                             const EdgeInsets.only(left: 16, top: 8, bottom: 8),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.15)),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15)),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white, size: 16),
+                            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                                color: Theme.of(context).colorScheme.onSurface, size: 16),
                             onPressed: widget.onBack,
                             padding: EdgeInsets.zero,
                           ),
@@ -226,7 +332,7 @@ class _ProfilePageState extends State<ProfilePage>
                   title: Text(
                     "Profile",
                     style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 24,
                       letterSpacing: -0.5,
                     ),
@@ -235,13 +341,13 @@ class _ProfilePageState extends State<ProfilePage>
                       .fadeIn(duration: 600.ms)
                       .slideX(begin: -0.2, end: 0),
                   background: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xFF1A1A1A),
-                          Color(0xFF0F0F0F),
+                          Theme.of(context).colorScheme.surfaceContainerLowest,
+                          Theme.of(context).colorScheme.surface,
                         ],
                       ),
                     ),
@@ -263,9 +369,10 @@ class _ProfilePageState extends State<ProfilePage>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Hi, $displayName!",
-                                  style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                                    color: Colors.white,
+                                  "Hi, ${(_userModel?.name ?? _userController.currentUser?.displayName ?? 'Expert').split(' ')[0]}!",
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontSize: 32,
                                     letterSpacing: -1,
                                   ),
@@ -275,7 +382,7 @@ class _ProfilePageState extends State<ProfilePage>
                                 Text(
                                   _buildMemberSince(),
                                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                                    color: Colors.white38,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -296,15 +403,15 @@ class _ProfilePageState extends State<ProfilePage>
                                 ),
                                 child: CircleAvatar(
                                   radius: 38,
-                                  backgroundColor: Colors.white12,
+                                  backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                                   backgroundImage: imageProvider,
                                   child: _isUploading
                                       ? const CircularProgressIndicator(
                                           color: Color(0xFFFF5200),
                                           strokeWidth: 2)
                                       : (imageProvider == null
-                                          ? const Icon(Icons.person,
-                                              color: Colors.white54, size: 40)
+                                          ? Icon(Icons.person,
+                                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), size: 40)
                                           : null),
                                 ),
                               ),
@@ -319,7 +426,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Text(
                         "Style Statistics",
                         style: TextStyle(fontFamily: 'Poppins', 
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 22,
                           fontWeight: FontWeight.w400,
                           letterSpacing: -0.5,
@@ -352,7 +459,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Text(
                         "Your Journey",
                         style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 22,
                           letterSpacing: -0.5,
                         ),
@@ -388,7 +495,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Text(
                         "Preferences",
                         style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 18,
                           letterSpacing: -0.3,
                         ),
@@ -396,14 +503,18 @@ class _ProfilePageState extends State<ProfilePage>
                       const SizedBox(height: 16),
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
+                          color: Theme.of(context).colorScheme.surfaceContainerLowest,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.05)),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Column(
                           children: [
+                            _buildThemeToggle(context),
+                            Divider(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                                indent: 56),
                             _buildActionItem(
                                 Icons.edit_outlined, "Edit Profile", onTap: () {
                               Navigator.of(context).push(MaterialPageRoute(
@@ -412,7 +523,7 @@ class _ProfilePageState extends State<ProfilePage>
                                       onUpdateComplete: _fetchUserData)));
                             }),
                             Divider(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                                 indent: 56),
                             _buildActionItem(Icons.logout_rounded, "Logout",
                                 isDestructive: true, onTap: _logout),
@@ -429,8 +540,6 @@ class _ProfilePageState extends State<ProfilePage>
               ),
             ],
           ),
-          // ONLY SHOW BAR IF WE ARE NOT IN THE MAIN PAGEVIEW (if onBack is null, it means we MIGHT want it,
-          // but actually HomePage handles it. If widget.onBack is NOT null, it's definitely being shown as a modal/separate route)
           if (ModalRoute.of(context)?.isCurrent == true &&
               widget.onBack != null)
             Positioned(
@@ -442,8 +551,6 @@ class _ProfilePageState extends State<ProfilePage>
                 onTabTapped: (index) {
                   if (index == 3) return;
                   Navigator.pop(context);
-                  // We should ideally navigate in the parent HomePage, but since we are modal,
-                  // we just return to the previous state.
                 },
               ),
             ),
@@ -480,19 +587,19 @@ class _ProfilePageState extends State<ProfilePage>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white70, size: 20),
+            child: Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -502,13 +609,13 @@ class _ProfilePageState extends State<ProfilePage>
                 Text(
                   title,
                   style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, 
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14),
                 ),
                 Text(
                   subtitle,
                   style:
-                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Colors.white38, fontSize: 11),
+                      TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -516,8 +623,8 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.bookmark_outline_rounded,
-              color: Colors.white24, size: 20),
+          Icon(Icons.chevron_right_rounded,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), size: 20),
         ],
       ),
     );
@@ -531,12 +638,12 @@ class _ProfilePageState extends State<ProfilePage>
     required bool highlighted,
   }) {
     final bgColor =
-        highlighted ? const Color(0xFFFF5200) : const Color(0xFF1A1A1A);
-    final textColor = highlighted ? Colors.black : Colors.white;
-    final subColor = highlighted ? Colors.black54 : Colors.white38;
+        highlighted ? const Color(0xFFFF5200) : Theme.of(context).colorScheme.surfaceContainerLowest;
+    final textColor = highlighted ? Colors.black : Theme.of(context).colorScheme.onSurface;
+    final subColor = highlighted ? Colors.black54 : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
     final iconBg = highlighted
         ? Colors.black.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.07);
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07);
     final iconColor = highlighted ? Colors.black87 : const Color(0xFFFF5200);
 
     return Container(
@@ -546,7 +653,7 @@ class _ProfilePageState extends State<ProfilePage>
         borderRadius: BorderRadius.circular(24),
         border: highlighted
             ? null
-            : Border.all(color: Colors.white.withValues(alpha: 0.07)),
+            : Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,18 +701,44 @@ class _ProfilePageState extends State<ProfilePage>
     return ListTile(
       onTap: onTap,
       leading: Icon(icon,
-          color: isDestructive ? Colors.orangeAccent : Colors.white70),
+          color: isDestructive ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
       title: Text(
         title,
         style: TextStyle(fontFamily: 'Poppins', 
-          color: isDestructive ? Colors.orangeAccent : Colors.white,
+        color: isDestructive ? Colors.orangeAccent : Theme.of(context).colorScheme.onSurface,
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
       ),
       trailing: isDestructive
           ? null
-          : const Icon(Icons.chevron_right, color: Colors.white24),
+          : Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
+    );
+  }
+
+  Widget _buildThemeToggle(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+
+    return ListTile(
+      leading: Icon(
+        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+      ),
+      title: Text(
+        "Dark Theme",
+        style: TextStyle(
+          fontFamily: 'Poppins',
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+      trailing: Switch(
+        value: isDark,
+        onChanged: (v) => themeProvider.toggleTheme(),
+        activeColor: const Color(0xFFFF5200),
+      ),
     );
   }
 }
