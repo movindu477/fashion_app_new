@@ -11,7 +11,7 @@ class PurchaseService {
   final InAppPurchase _iap = InAppPurchase.instance;
   late StreamSubscription<List<PurchaseDetails>> _subscription;
 
-  // Define your product IDs here (Must match Google Play Console)
+  // Product IDs must match what's registered in Google Play Console
   static const String product500Credits = 'credits_500_pack';
   static const String product1000Credits = 'credits_1000_pack';
 
@@ -50,7 +50,6 @@ class PurchaseService {
       List<PurchaseDetails> purchaseDetailsList) async {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
-        // Show loading if needed
       } else {
         if (purchaseDetails.status == PurchaseStatus.error) {
           print("Purchase Error: ${purchaseDetails.error}");

@@ -87,13 +87,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Semi-transparent barrier for the "center panel" effect request,
-    // or just a full page because "slide from left" implies a navigation transition.
-    // The user asked for "panel should be smoothly come from left side to the center".
-    // I will implement this as a full page with the transition handled by the Navigator push,
-    // but Style it like a centered panel if possible, or just a clean page.
-    // Given the phrasing "come from left side...", a page transition is best.
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(

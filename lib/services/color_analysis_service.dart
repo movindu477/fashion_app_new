@@ -5,8 +5,7 @@ import 'dart:io';
 import 'dart:math';
 
 class ColorAnalysisService {
-  /// Extracts dominant colors from an image file path.
-  /// Uses pixel sampling, filtering for distinct colors, and isolates for performance.
+  // Samples pixels from the image and returns up to 5 visually distinct colors.
   static Future<List<Map<String, int>>> getDominantColors(String imagePath,
       {int sampleStep = 10}) async {
     try {
@@ -15,7 +14,7 @@ class ColorAnalysisService {
 
       final Uint8List bytes = await imageFile.readAsBytes();
 
-      // Run intensive processing in a background Isolate
+      // Heavy pixel work runs off the main thread
       return await compute(_processImage, {
         'bytes': bytes,
         'sampleStep': sampleStep,
@@ -26,7 +25,7 @@ class ColorAnalysisService {
     }
   }
 
-  /// Internal processing logic for compute()
+  // Runs inside compute() — no Flutter bindings available here
   static List<Map<String, int>> _processImage(Map<String, dynamic> params) {
     final Uint8List bytes = params['bytes'];
     final int sampleStep = params['sampleStep'];
@@ -36,7 +35,7 @@ class ColorAnalysisService {
 
     final Map<String, int> colorCounts = {};
 
-    // 1. Sample pixels and count frequencies
+    // Walk the image grid, count how often each rounded color appears
     for (int y = 0; y < image.height; y += sampleStep) {
       for (int x = 0; x < image.width; x += sampleStep) {
         final img.Pixel pixel = image.getPixel(x, y);
@@ -45,7 +44,7 @@ class ColorAnalysisService {
         final int g = pixel.g.toInt();
         final int b = pixel.b.toInt();
 
-        // Round to nearest 5 to group slightly similar colors during initial count
+        // Round to nearest 5 so near-identical shades get grouped together
         final int rr = (r / 5).round() * 5;
         final int gg = (g / 5).round() * 5;
         final int bb = (b / 5).round() * 5;
@@ -55,15 +54,15 @@ class ColorAnalysisService {
       }
     }
 
-    // 2. Sort by frequency
+    // Most common first
     final sortedEntries = colorCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final List<Map<String, int>> distinctColors = [];
 
-    // 3. Filter for distinct colors (Euclidean distance > threshold)
+    // Skip anything that looks too similar to what we already picked
     for (var entry in sortedEntries) {
-      if (distinctColors.length >= 5) break; // Get up to 5 colors
+      if (distinctColors.length >= 5) break;
 
       final parts = entry.key.split(',');
       final int r = int.parse(parts[0]);
@@ -76,8 +75,7 @@ class ColorAnalysisService {
             pow(g - existing['g']!, 2) +
             pow(b - existing['b']!, 2));
 
-        if (distance < 45) {
-          // Threshold for "looking different"
+        if (distance < 45) { // colors within 45 units look too similar
           isTooSimilar = true;
           break;
         }
@@ -91,12 +89,10 @@ class ColorAnalysisService {
     return distinctColors;
   }
 
-  /// Converts RGB map to Flutter Color
   static Color mapToColor(Map<String, int> rgb) {
     return Color.fromARGB(255, rgb['r']!, rgb['g']!, rgb['b']!);
   }
 
-  /// Converts RGB to Hex String
   static String rgbToHex(Map<String, int> rgb) {
     return '#${rgb['r']!.toRadixString(16).padLeft(2, '0')}${rgb['g']!.toRadixString(16).padLeft(2, '0')}${rgb['b']!.toRadixString(16).padLeft(2, '0')}'
         .toUpperCase();

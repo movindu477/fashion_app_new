@@ -46,7 +46,7 @@ class _ScanPageState extends State<ScanPage>
   bool _isSavingSketch = false;
   final GlobalKey _sketchSectionKey = GlobalKey();
 
-  // Video Controller for background
+  // Background video for the scan card
   late VideoPlayerController _videoController;
   bool _isGeneratingDesign = false;
   final GeminiService _geminiService = GeminiService();
@@ -113,12 +113,18 @@ class _ScanPageState extends State<ScanPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _videoController =
-        VideoPlayerController.asset('assets/videos/fabric_bg.mp4')
-          ..initialize().then((_) {
-            setState(() {});
-            _videoController.setLooping(true);
-            _videoController.play();
-          });
+        VideoPlayerController.asset('assets/images/home1.mp4');
+    
+    _videoController.initialize().then((_) {
+      if (mounted) {
+        setState(() {});
+        _videoController.setLooping(true);
+        _videoController.play();
+      }
+    }).catchError((error) {
+      debugPrint("Video initialization failed: $error");
+      // Falls back to the black container defined above
+    });
   }
 
   @override
@@ -352,9 +358,9 @@ class _ScanPageState extends State<ScanPage>
         });
 
         if (mounted) {
-          _updateAutoPrompt(); // Auto-write to prompt box after analysis
+          _updateAutoPrompt(); // Fill the prompt with detected colors
 
-          // Step 1: Show "Analysis Complete" dialog and await dismissal
+          // Show the result dialog and wait for the user to close it
           await CustomModernAlert.showAndAwait(
             context: context,
             type: CustomAlertType.success,
@@ -376,10 +382,10 @@ class _ScanPageState extends State<ScanPage>
           );
         }
 
-        // Step 2: Save to Firestore after dialog is dismissed
+        // Save after the user closes the dialog
         await _saveAnalysisToFirestore();
 
-        // Step 3: Show "Saved to Collection" confirmation with fabric image
+        // Let the user know it's saved and offer a link to the collection
         await Future.delayed(const Duration(milliseconds: 700));
         if (!mounted) return;
         await CustomModernAlert.showAndAwait(
@@ -409,7 +415,7 @@ class _ScanPageState extends State<ScanPage>
       }
     } finally {
       if (mounted) {
-        // Artificial delay for smooth animation
+        // Small wait so the analyzing ring animation has time to finish
         await Future.delayed(const Duration(milliseconds: 1500));
         setState(() => _isAnalyzing = false);
       }
@@ -423,7 +429,7 @@ class _ScanPageState extends State<ScanPage>
     String? downloadUrl;
     String? imageBase64;
 
-    // 1. Try uploading to Firebase Storage (user-scoped path)
+    // Try Storage first, fall back to base64 if it fails
     try {
       final fileName =
           'users/${user.uid}/fabrics/${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -437,7 +443,7 @@ class _ScanPageState extends State<ScanPage>
       debugPrint("Storage upload failed, using base64 fallback: $e");
     }
 
-    // 2. If Storage failed, compress + base64-encode the image as fallback
+    // Storage upload failed — compress and embed as base64
     if (downloadUrl == null && fabricImageBytes != null) {
       try {
         final decoded = img.decodeImage(fabricImageBytes!);
@@ -451,7 +457,7 @@ class _ScanPageState extends State<ScanPage>
       }
     }
 
-    // 3. Always write Firestore document (with whatever image data we have)
+    // Save to Firestore regardless of which image method worked
     await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -471,7 +477,7 @@ class _ScanPageState extends State<ScanPage>
     if (fabricImageBytes == null || dominantColors.isEmpty) {
       CustomModernAlert.show(
         context: context,
-        type: CustomAlertType.error, // mapping warning to error for now
+        type: CustomAlertType.error,
         title: 'Missing Data',
         message: 'Please scan and analyze fabric first!',
       );
@@ -496,7 +502,7 @@ class _ScanPageState extends State<ScanPage>
           _hasResult = true;
         });
 
-        // Trigger callback to shared state in HomePage
+        // Pass the result up to the HomePage
         if (widget.onConceptGenerated != null &&
             _generatedDesignConcept != null &&
             fabricImageBytes != null) {
@@ -510,7 +516,7 @@ class _ScanPageState extends State<ScanPage>
           );
         }
 
-        // Smooth scroll to the AI Sketch section
+        // Scroll to the sketch section once the result is ready
         Future.delayed(const Duration(milliseconds: 300), () {
           if (_sketchSectionKey.currentContext != null) {
             Scrollable.ensureVisible(
@@ -724,7 +730,7 @@ class _ScanPageState extends State<ScanPage>
       String? downloadUrl;
       String? sketchBase64;
 
-      // 1. Try uploading to Firebase Storage (user-scoped path)
+      // Try Storage first, fall back to base64 if it fails
       try {
         final fileName =
             'users/${user.uid}/designs/${DateTime.now().millisecondsSinceEpoch}.png';
@@ -738,7 +744,7 @@ class _ScanPageState extends State<ScanPage>
         debugPrint("Storage upload failed, using base64 fallback: $e");
       }
 
-      // 2. If Storage failed, compress + base64-encode as fallback
+      // Storage failed — compress and encode as base64
       if (downloadUrl == null) {
         try {
           final decoded = img.decodeImage(_generatedSketch!);
@@ -752,13 +758,13 @@ class _ScanPageState extends State<ScanPage>
         }
       }
 
-      // 3. Build color list for Firestore — use Map keys, not integer index
+      // Store colors as {r,g,b} maps — integer arrays caused parse issues in the library
       final colorsData = dominantColors
           .take(5)
           .map((c) => {'r': c['r'] ?? 0, 'g': c['g'] ?? 0, 'b': c['b'] ?? 0})
           .toList();
 
-      // 4. Save metadata to generated_designs (what library reads)
+      // Write the design doc so the library page can display it
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -774,7 +780,7 @@ class _ScanPageState extends State<ScanPage>
         'colors': colorsData,
       });
 
-      // 5. Show success dialog with the sketch image visible
+      // Show the sketch inside the confirmation dialog
       if (mounted) {
         // ignore: use_build_context_synchronously
         await CustomModernAlert.showAndAwait(
@@ -833,7 +839,7 @@ class _ScanPageState extends State<ScanPage>
           .doc(user.uid)
           .collection('generated_designs')
           .add({
-        'userId': user.uid, // Explicitly adding userId for rule consistency
+        'userId': user.uid, // needed for Firestore security rules
         'designConcept': _generatedDesignConcept,
         'colors': dominantColors,
         'style': _selectedStyle,
@@ -990,7 +996,6 @@ class _ScanPageState extends State<ScanPage>
               const SizedBox(height: 30),
             ],
 
-            // SECTION: AI STYLING
             _buildSectionHeader("AI Styling Options")
                 .animate()
                 .fadeIn(delay: 200.ms)
@@ -1019,7 +1024,6 @@ class _ScanPageState extends State<ScanPage>
 
             const SizedBox(height: 30),
 
-            // ANALYSIS RESULTS (SMOOTH RING ANIMATION)
             if (_isAnalyzing ||
                 (analysisCompleted && dominantColors.isNotEmpty)) ...[
               const SizedBox(height: 30),
@@ -1033,7 +1037,6 @@ class _ScanPageState extends State<ScanPage>
             if (analysisCompleted && dominantColors.isNotEmpty) ...[
               const SizedBox(height: 40),
 
-              // DESIGN ASSISTANT
               _buildSectionHeader("AI Design Assistant")
                   .animate()
                   .fadeIn()
@@ -1370,7 +1373,6 @@ class _ScanPageState extends State<ScanPage>
                 ),
               ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1, end: 0),
 
-              // NEW: DISPLAY RESULTS INLINE
               if (_hasResult) ...[
                 const SizedBox(height: 50),
                 _buildSectionHeader("AI Design Creation")
@@ -1556,7 +1558,6 @@ class _ScanPageState extends State<ScanPage>
                       ),
                       const SizedBox(height: 40),
 
-                      // ── AI SKETCH SECTION ──
                       SizedBox(key: _sketchSectionKey, height: 0),
                       const SizedBox(height: 8),
                       // Header row
@@ -1605,7 +1606,6 @@ class _ScanPageState extends State<ScanPage>
                                   width: double.infinity,
                                   fit: BoxFit.cover,
                                 ),
-                                // Subtle bottom gradient
                                 Positioned(
                                   bottom: 0,
                                   left: 0,
@@ -1624,7 +1624,6 @@ class _ScanPageState extends State<ScanPage>
                                     ),
                                   ),
                                 ),
-                                // Tap hint badge
                                 Positioned(
                                   bottom: 16,
                                   right: 16,

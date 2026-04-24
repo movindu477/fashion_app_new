@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // ── Primary Orange (Previously Purple)
+  // Primary orange
   static const Color orange = Color(0xFFFF5200);
   static const Color orangeDark = Color(0xFFE64A19);
 
-  // ── Hot Pink
+  // Hot pink
   static const Color pink = Color(0xFFEC4899);
   static const Color pinkDark = Color(0xFFDB2777);
 
-  // ── Gradient (orange → pink) — use on main CTAs, hero cards, badges
+  // Orange-to-pink gradient — used on main buttons and hero cards
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFFFF5200), Color(0xFFEC4899)],
     begin: Alignment.centerLeft,

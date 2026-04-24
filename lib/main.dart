@@ -58,21 +58,21 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  // ── Stage 2: title reveal (slide up + scale + fade in)
+  // Title animation controllers
   late AnimationController _titleController;
   late Animation<double> _titleFade;
   late Animation<double> _titleScale;
   late Animation<Offset> _titleSlide;
 
-  // ── Stage 3: subtitle + slider appear
+  // Subtitle and slider controllers
   late AnimationController _subController;
   late Animation<double> _subFade;
   late Animation<Offset> _subSlide;
 
-  // ── Stage 4: pulsating glow for the slider
+  // Button glow pulse
   late AnimationController _glowController;
 
-  // ── Stage 5: exit flash on completion
+  // Exit transition
   late AnimationController _exitController;
   late Animation<double> _exitFlash;
   late Animation<double> _exitFade;
@@ -89,12 +89,11 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Precache the background image to ensure it shows instantly without flickering
+    // Pre-load so the image shows immediately without a flash
     precacheImage(const AssetImage('assets/images/main3ori.jpg'), context);
   }
 
   void _initAnimations() {
-    // 1. Title (slide + scale + fade)
     _titleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -114,7 +113,6 @@ class _SplashScreenState extends State<SplashScreen>
           curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic)),
     );
 
-    // 2. Subtitle + Slider (fade + slide)
     _subController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -129,13 +127,11 @@ class _SplashScreenState extends State<SplashScreen>
           curve: const Interval(0.0, 1.0, curve: Curves.easeOutCubic)),
     );
 
-    // 3. Pulsating glow for the button
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    // 4. Exit transition
     _exitController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -179,7 +175,6 @@ class _SplashScreenState extends State<SplashScreen>
     final Widget destination =
         user != null ? const HomePage() : const WelcomePage();
 
-    // Use a high-end multi-animation transition
     Navigator.pushReplacement(
       context,
       PageTransition(
@@ -200,14 +195,12 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Background Image (Static)
           Image.asset(
             'assets/images/main3ori.jpg',
             fit: BoxFit.cover,
             filterQuality: FilterQuality.high,
           ),
 
-          // ── Deep Luxury Overlay
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -223,12 +216,10 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Main Content
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Title reveal (Pure White, no shimmer)
                 SlideTransition(
                   position: _titleSlide,
                   child: FadeTransition(
@@ -290,7 +281,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // ── Modernized Slider
           Positioned(
             bottom: 80,
             left: 0,

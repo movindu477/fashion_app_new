@@ -141,9 +141,9 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
   Widget _buildItemCard(BuildContext context, Map<String, dynamic> data,
       String docId, String collection) {
     final isDesign = collection == 'generated_designs';
-    final imageUrl = data['imageUrl'] as String?; // Firebase Storage URL
-    final imageBase64 = data['imageBase64'] as String?; // scanned fabric base64
-    final sketchBase64 = data['sketchBase64'] as String?; // AI design base64
+    final imageUrl = data['imageUrl'] as String?;
+    final imageBase64 = data['imageBase64'] as String?;
+    final sketchBase64 = data['sketchBase64'] as String?;
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
     
@@ -164,7 +164,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Optimized Image Loading (prioritize cloud URL)
+            // Prefer the Storage URL, fall back through base64 options, then local file
             imageUrl != null
                 ? Image.network(
                     imageUrl,
@@ -267,7 +267,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
     ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.9, 0.9));
   }
 
-  // Robust color parser handling List<List<int>> AND List<Map<String, dynamic>>
+  // Colors can come as [r,g,b] arrays (old) or {r,g,b} maps (new format)
   List<Color> _parseColors(dynamic colorsData) {
     List<Color> result = [];
     if (colorsData == null) return result;
@@ -275,11 +275,10 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
     if (colorsData is List) {
       for (var item in colorsData) {
         if (item is List && item.length >= 3) {
-          // Old Format: [r, g, b]
+          // legacy array format
           result.add(Color.fromRGBO(item[0], item[1], item[2], 1.0));
         } else if (item is Map) {
-          // New Format: {r: 10, g: 20, b: 30}
-          // Handle both String keys "r" and implicit dynamic keys
+          // newer map format
           int r = (item['r'] ?? 0) as int;
           int g = (item['g'] ?? 0) as int;
           int b = (item['b'] ?? 0) as int;
@@ -296,7 +295,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
     final colors = _parseColors(data['dominantColors'] ?? data['colors']);
     final imageUrl = data['imageUrl'] as String?;
     final sketchBase64 = data['sketchBase64'] as String?;
-    final imageBase64 = data['imageBase64'] as String?; // Fixed: missing base64 support
+    final imageBase64 = data['imageBase64'] as String?;
     final fabricBase64 = data['fabricBase64'] as String?;
     final imagePath = data['imagePath'] as String?;
     final designConcept = data['designConcept'] as String?;
@@ -409,7 +408,7 @@ class _FabricLibraryPageState extends State<FabricLibraryPage>
                     .map((color) => Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05), // Dynamic background
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(16)),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

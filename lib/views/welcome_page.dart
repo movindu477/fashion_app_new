@@ -17,7 +17,7 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Pre-cache onboarding images for buttery smooth swipes
+    // Pre-load images so there's no flash when the user swipes
     for (var data in _onboardingData) {
       precacheImage(AssetImage(data['image']!), context);
     }
@@ -73,7 +73,6 @@ class _WelcomePageState extends State<WelcomePage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. PAGE VIEW FOR BACKGROUNDS
           PageView.builder(
             controller: _pageController,
             onPageChanged: (index) => setState(() => _currentPage = index),
@@ -88,7 +87,6 @@ class _WelcomePageState extends State<WelcomePage> {
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
                     ),
-                    // Gradient Overlay
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -103,7 +101,6 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                       ),
                     ),
-                    // Content Area
                     SafeArea(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -159,7 +156,6 @@ class _WelcomePageState extends State<WelcomePage> {
             },
           ),
 
-          // 2. BOTTOM NAVIGATION (BUTTON & INDICATORS)
           Positioned(
             bottom: 60,
             left: 0,
@@ -169,7 +165,6 @@ class _WelcomePageState extends State<WelcomePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: List.generate(
@@ -191,7 +186,6 @@ class _WelcomePageState extends State<WelcomePage> {
                         .slideX(begin: -0.2, end: 0),
                   ),
                   const SizedBox(height: 30),
-                  // Primary Action Button (AS SEEN IN UI)
                   GestureDetector(
                     onTap: _onNext,
                     child: Container(

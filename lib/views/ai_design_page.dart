@@ -52,7 +52,7 @@ class _AiDesignPageState extends State<AiDesignPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Automatic sync when user returns from the website
+      // Sync credits when the user comes back from the top-up page
       StabilityService().syncBalanceFromApi();
 
       ScaffoldMessenger.of(context).showSnackBar(

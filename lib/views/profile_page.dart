@@ -273,7 +273,7 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // Robust display name: Firestore > Firebase Auth displayName > email prefix > never 'Designer'
+    // Prefer Firestore name, fall back to Auth display name, then email prefix
     final String displayName = _userModel?.name?.isNotEmpty == true
         ? _userModel!.name!
         : (_userController.currentUser?.displayName?.isNotEmpty == true

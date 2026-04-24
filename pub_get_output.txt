@@ -1,3 +1,0 @@
-Resolving dependencies...
-Because flutterfashion_app depends on tflite_flutter_helper ^0.4.0 which doesn't match any versions, version solving failed.
-Failed to update packages.

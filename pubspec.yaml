@@ -81,6 +81,7 @@ flutter:
     - assets/images/hello3.jpg
     - assets/images/hello4.jpg
     - assets/models/clean_fabric_classifier.tflite
+    - assets/images/home1.mp4
 
   fonts:
     - family: Poppins

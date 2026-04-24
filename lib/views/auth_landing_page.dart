@@ -44,7 +44,7 @@ class AuthLandingPage extends StatelessWidget {
             fit: BoxFit.cover,
           ),
 
-          // Gradient overlay — light on top, heavy on bottom for readability
+          // Fades from transparent at top to near-black at bottom
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -158,9 +158,7 @@ class AuthLandingPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared gradient button (pink → purple)
-// ─────────────────────────────────────────────────────────────────────────────
+// Gradient button used for primary actions
 class _GradientButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
@@ -206,9 +204,7 @@ class _GradientButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Outlined / ghost button (white border on dark bg)
-// ─────────────────────────────────────────────────────────────────────────────
+// Ghost button with white border for secondary actions
 class _OutlinedButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;

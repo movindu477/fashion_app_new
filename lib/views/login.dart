@@ -384,7 +384,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Tab switcher ──────────────────────────────────────────────────────────
   Widget _buildTabSwitcher() {
     return Container(
       height: 46,
@@ -433,7 +432,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Login form fields ─────────────────────────────────────────────────────
   Widget _buildLoginFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,7 +508,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Register form fields ──────────────────────────────────────────────────
   Widget _buildRegisterFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,7 +594,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Field label ───────────────────────────────────────────────────────────
   Widget _fieldLabel(String label) {
     return Text(
       label,
@@ -610,7 +606,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Text field ────────────────────────────────────────────────────────────
   Widget _buildField({
     required TextEditingController controller,
     required String hint,
@@ -664,7 +659,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Gradient button ───────────────────────────────────────────────────────
   Widget _buildGradientButton({
     required String text,
     required VoidCallback onTap,
@@ -712,7 +706,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Divider ───────────────────────────────────────────────────────────────
   Widget _buildDivider() {
     return Row(
       children: [
@@ -733,7 +726,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  // ── Google button ─────────────────────────────────────────────────────────
   Widget _buildGoogleButton({required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,

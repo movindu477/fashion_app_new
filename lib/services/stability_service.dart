@@ -12,7 +12,7 @@ class StabilityService {
   static const String _balanceEndpoint =
       "https://api.stability.ai/v1/user/balance";
 
-  /// Fetches the ACTUAL balance from Stability AI and updates Firestore
+  // Hits the Stability AI balance endpoint and writes the result to Firestore
   Future<int> syncBalanceFromApi() async {
     try {
       final sysDoc = await FirebaseFirestore.instance
@@ -35,11 +35,10 @@ class StabilityService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Stability returns credits as a double (e.g. 10.50). We round it for the UI.
+        // API returns a float, so we floor it for cleaner display
         final double realCredits = (data['credits'] ?? 0.0).toDouble();
         final int roundedCredits = realCredits.floor();
 
-        // Update the global balance in Firestore
         await FirebaseFirestore.instance
             .collection('app_settings')
             .doc('system')
@@ -62,7 +61,7 @@ class StabilityService {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw "Please sign in to generate designs.";
 
-      // 1. Fetch Global Settings & User Credits
+      // Pull the active API key and credit count from Firestore
       final sysDoc = await FirebaseFirestore.instance
           .collection('app_settings')
           .doc('system')
@@ -77,16 +76,14 @@ class StabilityService {
         isEnabled = data['isImageEnabled'] ?? true;
       }
 
-      // Check Real-time balance instead of just cached numbers
-      // This is for the owner/developer use case you mentioned
+      // Credits come from the last syncBalanceFromApi() call
       int credits = sysDoc.data()?['image_credits'] ?? 0;
 
-      // 2. Check credits and status
       if (!isEnabled) {
         throw "AI Image Generation is temporarily disabled.";
       }
       if (credits <= 0) {
-        // One last check: try to sync before failing
+        // One last sync attempt before giving up
         credits = await syncBalanceFromApi();
         if (credits <= 0) throw "CREDITS_EXHAUSTED";
       }
@@ -134,14 +131,14 @@ No text. No watermark.
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        // Auto-sync after successful generation to keep balance fresh
+        // Refresh the balance after each successful generation
         await syncBalanceFromApi();
 
         final data = jsonDecode(response.body);
         final base64Image = data["image"];
         return base64Image != null ? base64Decode(base64Image) : null;
       } else if (response.statusCode == 402) {
-        await syncBalanceFromApi(); // Ensure we know we're at 0
+        await syncBalanceFromApi(); // Sync so Firestore reflects the zero balance
         throw "CREDITS_EXHAUSTED";
       } else {
         throw "Generation failed: ${response.statusCode}";
