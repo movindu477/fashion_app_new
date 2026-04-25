@@ -17,6 +17,10 @@ their mobile device.
 
 1. LAUNCHING THE APP
 ----------------------
+
+  - Click Terminal and select a new terminal inside the project
+  - In that Terminal type - flutter pub get then after it completes then type flutter run to open the app 
+  
   The user opens the app and is greeted with a short loading screen while
   the app gets ready. If the user has already logged in before, they are
   taken directly to the main screen. If not, they are guided through the
